@@ -1,0 +1,516 @@
+
+/* Side Menu Section -----------------------------------------------------------------*/
+ .SideMenuSection a {
+    text-decoration: none;
+    position: relative;
+    color: rgb(48, 48, 48);
+  }
+   /* .SideMenuSection a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px; 
+    width: 70%;
+    height: 1px; 
+    background: rgb(133, 133, 133); 
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+  }
+  
+   .SideMenuSection a:hover::after,
+   .SideMenuSection a:focus::after {
+    transform: scaleX(1);
+    width: 60%;
+  } */
+   /* .SideMenuSection a:hover{
+    border-radius: 0 20px 20px 0;
+    transition: 0.5s ease;
+    background-color: rgb(228, 228, 228);
+  } */
+
+/* Home Section ///////////////////////////////////////////////////// */
+.homeSection, .growthSection, .analyticSection, .reportSection, .trendSection{
+  position: absolute;
+  left: 180px;
+  top: 100px;
+  width: 80%;
+}
+  /* Top Navbar */
+  .TopNavBar {
+    height: 90px;
+    box-shadow: 0 0 5px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+  }
+/* =============================================================================== */
+  .SideMenuSection:not(.bottomSideBarElement):hover {
+    width: 250px;
+}
+  /* Side Menu */
+  .SideMenuSection {
+    transition: width 0.5s ease;
+    height: 100vh;
+    width: 90px;
+    will-change: width;
+    position: fixed;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .SideMenuSection:hover {
+    width: 270px;
+  }
+
+  .SideMenuSection ul .list-group-item:hover{
+    transform: translateX(10px);
+    transition: transform 0.6s ease;
+  }
+  .SideMenuSection .sideMenuText {
+    display: none;
+    color: rgb(0, 0, 0);
+  
+  }
+  
+  .SideMenuSection i{
+    font-size: 1.5em;
+  }
+  
+  .SideMenuSection:hover .sideMenuText {
+    display: inline-block;
+  }
+  /* Side Menu Item */
+  .SideMenuSection .list-group-item {
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  /* Icon and Text Adjustment */
+  .list-group-item i,
+  .list-group-item span {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  
+  .list-group-item:hover i,
+  .list-group-item:hover span {
+    transform: translateY(0); 
+  }
+  
+  /* Responsive tweaks */
+  @media (max-width: 992px) {
+    .TopNavbarElements {
+      justify-content: center;
+    }
+    
+    .SideMenuSection {
+      display: none;
+    }
+    
+    .SideMenuSection:hover {
+      width: 200px;
+      transform: width 0.9s ease;
+    }   
+  } 
+
+/* SEARCH BAR ON NAVBAR   ////////////////////////////////////////////////////// */
+.search-container {
+  display: flex;
+  align-items: center;
+  width: 300px;
+  background-color: #ffffff;
+  border-radius: 25px;
+  overflow: hidden;
+  border: 2px solid #494949; 
+  position: absolute;
+  left: 30%;
+}
+
+.search-input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  border-radius: 25px 0 0 25px;
+}
+
+.search-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 50px;
+  background-color: #4e4e4e;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  border-radius: 0 25px 25px 0;
+}
+.search-button:focus {
+  outline: none;
+}
+
+  /* KPI For Home Page////////////////////////////////////////////////////////////// */
+.container,.daylyPerformanceScore,  .homeSection-2 .container {
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: space-around;
+    gap: 20px;
+  }
+  .DetailsLink{
+    text-decoration: none;
+    font-size: 1.1rem;
+    position: absolute;
+    right: 200px;
+    border: none;
+    background-color: none;
+  }
+  /*RecommendationSection On HomePage////////////////////////////////////////////*/
+  .recommendationSection{
+    border: 1px solid gray;
+    height: 100%;
+    border-radius: 5px;
+    padding: 1.5em;
+  } 
+  /* PerformanceScore  file on home page //////////////////////////////////////// */
+  .PerformanceScore-container{
+    box-shadow: 0 0 2px gray;
+    border-radius: 5px;
+    height: auto;
+    text-align: center;
+  }
+  .PerformanceScore-container:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 1px 2px;
+    transition: transform 0.5s ease;
+  }
+  /* Ranking on home page ////////////////////////////////////// */
+  .IndustryPosition{
+    box-shadow: 0 0 3px rgb(147, 147, 147);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 2rem;
+  }
+  .IndustryPosition .fa-ranking-star{
+    position: absolute;
+    left: 50px;
+    color: rgb(67, 67, 67);
+  }
+  .IndustryPosition .viewRanks{
+    font-size: 1rem;
+    position: absolute;
+    right: 50px;
+  }
+/*  Alerts Container for Notifications ////////////////////////////////////////////////////// */
+.alerts{
+  position: fixed;
+  bottom: 0;
+  right: 20px;
+}
+.alertSection button{
+  border: none;
+  background-color: rgb(39, 39, 39);
+  border-radius: 100%;
+  font-size: 1.4rem;
+  z-index: 2;
+  box-shadow: 0 0 25px gray;
+}
+/* reports   On Reports Page///////////////////////////////////////////////////////// */
+.reportSection {
+  padding: 20px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.controls button, .controls select {
+  padding: 8px 12px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.report-details {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.metrics-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.metrics-table th, .metrics-table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.charts {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.chart {
+  flex: 1;
+  min-width: 300px;
+}
+.bar-chart{
+  border-radius: 10px;
+  box-shadow: 0 0 3px gray;
+  height: 100%;
+  padding: 50px;
+}
+.pie-chart{
+  border-radius: 10px;
+  box-shadow: 0 0 3px gray;
+  width: 75px;
+  height: 100%;
+  padding: 50px;
+}
+.reportSection h1,.reportSection h2,.reportSection h3 {
+  color: #333;
+}
+/* Analytics  Page ///////////////////////////////////////////////////////////// */
+.analyticSection{
+
+}
+.analyticSection h1{
+  font-size: 2rem; 
+  margin-bottom: 20px;
+}
+.analyticSection .dataVisualization, .userBehavior { 
+  background-color: #fff; 
+  border-radius: 8px; 
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+  padding: 20px;
+   margin-bottom: 20px;
+}
+.analyticSection button { 
+  color: rgb(0, 0, 0); 
+  border: none; 
+  padding: 10px; 
+  cursor: pointer; 
+  margin-right: 10px; 
+}
+
+.analyticSection .section-1{
+
+}
+/* .....................analytics component page ........................... */
+/* data vizualization ////////////////////////// */
+
+.chartContainer { 
+  background-color: #fff; border-radius: 8px;
+  padding: 20px; 
+  margin-bottom: 20px; 
+} 
+.chartTitle { 
+  font-size: 1.6rem; 
+  color: #333;
+}
+/* user behaviour //////////////////////////////// */
+/* .userBehaviorContainer {
+  border-radius: 8px;
+  height: auto;
+}
+
+.userBehaviorContainer .title {
+  font-size: 1.6em;
+  color: #333;
+}
+.userBehaviorContainer .viewButtons button {
+  border-radius: 3px;
+  color: rgb(255, 255, 255);
+  border: none;
+  padding: 10px;
+  margin-right: 20px;
+  cursor: pointer;
+  background-color: rgb(99, 99, 99);
+}
+.viewButtons button:hover  {
+ background-color: rgb(0, 0, 0);
+}
+.analyticSection .viewButtons button.active  { 
+  background-color: rgb(0, 0, 0);
+ } */
+/* timerange /////////////////////////////// */
+.timeRangeButton{
+  border-radius: 3px !important;
+  color: rgb(0, 0, 0) !important;
+  border: none !important;
+  padding: 10px !important;
+  margin-right: 20px !important;
+  cursor: pointer !important;
+  border: 1px solid gray!important;
+}
+
+.timeRangeButton:hover  { 
+  background-color: rgb(0, 0, 0) !important;
+  color: rgb(255, 255, 255) !important;
+ }
+
+/* ///////////Risk Management page //////////////////////////////////////////////////// */
+section{
+  text-align: center;
+  box-shadow: 0 1pxx 5px rgb(59, 59, 59);
+}
+
+.riskCategories ul{
+  list-style: none;
+}
+/*////////////// risk dashboard ////////////// */
+.riskDashBoard{
+  display: grid;
+  grid-template-columns: repeat(auto-fir, minmax(250px,1fr));
+  gap: 20px;
+}
+.riskDashBoard h2{
+  text-align: left;
+  font-size: 2rem;
+}
+.riskDashBoard p{
+  text-align: left;
+  font-size: 1.1rem;
+}
+
+.dashboard-overview .card{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.dashboard-overview .card:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 1px 2px rgb(68, 68, 68);
+}
+.dashboard-overview .card h3{
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #444444;
+}
+.dashboard-overview .card p{
+  margin: 5px 0;
+  font-size: 0.9rem;
+}
+/* Metices/////////////////// */
+
+/* risk category //////////////// */
+.riskCategories h2{
+  text-align: left;
+}
+.riskCategories li{
+  box-shadow: 0 0 3px gray;
+  border-radius: 5px;
+}
+.riskCategories li h3{
+  font-size: 1.5rem;
+}
+.riskCategories li p{
+  font-size: 0.95rem;
+}
+/* mitigation ////////////////////// */
+.mitigationPlans table{
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+.mitigationPlans th,
+.mitigationPlans td{
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid gray;
+}
+.mitigationPlans th{
+  background-color: #c5c5c5;
+  font-weight: 900;
+}
+.mitigationPlans tr:hover{
+  background-color: #969696;
+}
+  /* Responsive tweaks */
+  @media (max-width: 992px) {
+    .homeSection, .growthSection, .analyticSection, .reportSection, .trendSection{
+      left: auto;
+      width: 100%;
+    }
+    .TopNavbarElements {
+      justify-content: center;
+    }
+    
+    .SideMenuSection, .search-container {
+      display: none;
+    }
+    
+    .SideMenuSection:hover {
+      width: 200px;
+      transform: width 0.9s ease;
+    }   
+  } 
+
+
+
+
+  /* Form ..................................................... */
+
+
+
+  .multi-step-form {
+    width: 100%;
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+  }
+  
+  .step {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  input, textarea, select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  
+  button {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .next-button, .submit-button {
+    background-color: black;
+    color: white;
+  }
+  
+  .back-button {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  button:hover {
+    opacity: 0.8;
+  }
+  /*  */
