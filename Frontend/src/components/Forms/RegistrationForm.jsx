@@ -1,8 +1,9 @@
 import React, { useState } from "react";
+import axios from "axios";
 import StepOnePersonalInfo from "./FormComponents/PersonalInfo";
 import StepTwoAccountDetails from "./FormComponents/AccountDetails";
+import StepThreeCompanyInfo from "./FormComponents/CompanyInfo";
 import StepFourAgreement from "./FormComponents/Agreement";
-import StepThreeCompanyInfo from "./FormComponents/companyInfo";
 
 const RegistrationForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -29,8 +30,20 @@ const RegistrationForm = () => {
   const handleChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-  const handleSubmit = () => {
-    console.log("Form Submitted", formData);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/api/register", formData, {
+        headers: {
+          "Content-Type": "application/json"
+        },
+      });
+      console.log(response.data);
+      alert("Form submitted successfully!");
+    } catch (error) {
+      alert("An error occurred while submitting the form.");
+      console.error("Error submitting form:", error);
+    }
   };
 
   const steps = [
