@@ -18,10 +18,11 @@ app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
-CORS(app, resources={r"/*": {"origins": "http://localhost:5174"}})
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+
 
 login_manager.login_view = 'login'
 
 # Import routes
 from .routes import *
-
+from .models import Company, User
