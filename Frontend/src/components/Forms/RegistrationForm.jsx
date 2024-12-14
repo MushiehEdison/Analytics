@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate, Link } from "react-router-dom"; // Import useNavigate
 import StepOnePersonalInfo from "./FormComponents/PersonalInfo";
 import StepTwoAccountDetails from "./FormComponents/AccountDetails";
 import StepThreeCompanyInfo from "./FormComponents/CompanyInfo";
@@ -25,6 +26,8 @@ const RegistrationForm = () => {
     termsAgreed: false,
   });
 
+  const navigate = useNavigate(); // Initialize navigate
+
   const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, 4));
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
   const handleChange = (field, value) =>
@@ -40,6 +43,7 @@ const RegistrationForm = () => {
       });
       console.log(response.data);
       alert("Form submitted successfully!");
+      navigate("/");
     } catch (error) {
       alert("An error occurred while submitting the form.");
       console.error("Error submitting form:", error);
@@ -71,6 +75,9 @@ const RegistrationForm = () => {
             Submit
           </button>
         )}
+      </div>
+      <div className="login">
+        <span>Already have an account <Link to='/login' className='mx-3'>Login</Link></span>
       </div>
     </div>
   );

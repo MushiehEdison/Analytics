@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom"; 
+import { Link } from "react-router-dom";
+import { useAuth } from "../Forms/AuthContent";
 import '../../App.css'
 function SideMenuBar() {
   const [inactive, setInactive] = useState(true);
-
+  const { logout } = useAuth()
   return (
     <div
       onMouseOver={() => setInactive(false)}
@@ -50,7 +51,7 @@ function SideMenuBar() {
               <span className="sideMenuText mx-3">Setting</span>
             </li>
          </Link>
-          <Link className="my-2 p-2" to="#">
+          <Link className="my-2 p-2" to="#" onClick={logout}>
             <li className="d-flex align-items-center mx-3">
                <i className="fa-solid fa-arrow-right-from-bracket text-secondary"></i>
                <span className="sideMenuText mx-3">Logout</span>

@@ -21,6 +21,8 @@ const StepOnePersonalInfo = ({ data, onChange }) => (
       value={data.phone}
       onChange={(e) => onChange("phone", e.target.value)}
     />
+
+
   </div>
 );
 

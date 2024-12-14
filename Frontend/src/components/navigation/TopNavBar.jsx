@@ -15,7 +15,7 @@ function TopNavBar() {
       </div>
 
       <div className="TopNavbarElements d-flex align-items-center">
-        <div className="CompanyName fs-4 me-3"><Link style={{textDecoration:"None", color: "Black"}} to="/register">Business Compass</Link></div>
+        <div className="CompanyName fs-4 me-3">Business Compass</div>
         <div className="CompanyLogo">
           <img src={image} className="profileImage rounded-circle" alt="Company logo" style={{width: '60px'}} />
         </div>

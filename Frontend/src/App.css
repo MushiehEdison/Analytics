@@ -478,20 +478,20 @@ section{
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
     background-color: #fff;
   }
-  
+
   .step {
     display: flex;
     flex-direction: column;
     gap: 15px;
   }
-  
+
   input, textarea, select {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 16px;
   }
-  
+
   button {
     padding: 10px;
     border: none;
@@ -499,17 +499,17 @@ section{
     font-size: 16px;
     cursor: pointer;
   }
-  
+
   .next-button, .submit-button {
     background-color: black;
     color: white;
   }
-  
+
   .back-button {
     background-color: #f5f5f5;
     color: #333;
   }
-  
+
   button:hover {
     opacity: 0.8;
   }
