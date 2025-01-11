@@ -22,7 +22,7 @@ function RiskMetrices({metrics}){
     return(
         <>
             <section className="metrices p-4">
-                <h2>Risk Metrics</h2>``
+                <h2>Risk Metrics</h2>
                 <Bar data={data} />
             </section>
         </>

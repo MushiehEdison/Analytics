@@ -45,6 +45,12 @@ function SideMenuBar() {
           </li>
         </Link> 
         <div className="my-5">
+           <Link className="my-2 p-2" to="/input">
+           <li className="d-flex align-items-center mx-3">
+              <i className="fa-solid fa-edit text-dark"></i>
+              <span className="sideMenuText mx-3">Daily Input</span>
+            </li>
+         </Link>
           <Link className="my-2 p-2" to="#">
            <li className="d-flex align-items-center mx-3">
               <i className="fa-solid fa-gear text-secondary"></i>

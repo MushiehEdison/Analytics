@@ -21,12 +21,29 @@ const StepThreeCompanyInfo = ({ data, onChange }) => (
       onChange={(e) => onChange("businessAddress", e.target.value)}
     ></textarea>
     <input
+      type="url"
+      placeholder="WebSite"
+      value={data.companyWebsite}
+      onChange={(e) => onChange("companyWebsite", e.target.value)}
+    />
+    <input
       type="text"
       placeholder="Contact Information"
       value={data.companyContact}
       onChange={(e) => onChange("companyContact", e.target.value)}
     />
-    <input type="text" value={data.registrationDate} readOnly />
+     <input
+      type="text"
+      placeholder="Legal Structure"
+      value={data.legalStructure}
+      onChange={(e) => onChange("legalStructure", e.target.value)}
+    />
+
+    <input
+    type="date"
+    value={data.creationDate}
+     onChange={(e) => onChange("creationDate", e.target.value)}
+     />
   </div>
 );
 

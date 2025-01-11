@@ -20,9 +20,9 @@ const RegistrationForm = () => {
     industry: "",
     businessAddress: "",
     companyContact: "",
-    registrationDate: new Date().toISOString().split("T")[0],
+    creationDate: "",
     companyWebsite: "",
-    socialMedia: "",
+    legalStructure: "",
     termsAgreed: false,
   });
 

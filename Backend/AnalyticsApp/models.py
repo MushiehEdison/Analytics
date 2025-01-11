@@ -15,8 +15,9 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(60), nullable=False)
     role = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.Integer, nullable=False, unique=True)
-    companies = db.relationship('Company', backref='owner', lazy=True)
 
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    company = db.relationship('Company', backref='users')
     def __repr__(self):
         return f"User('{self.username}', '{self.email}', '{self.fullname}')"
 
@@ -24,17 +25,16 @@ class Company(db.Model):
     __tablename__ = 'company'
     id = db.Column(db.Integer, primary_key=True)
     companyName = db.Column(db.String(60), nullable=False)
-    companyLogo = db.Column(db.String(120), nullable=True, unique=True)
+    companyLogo = db.Column(db.String(120), nullable=True, unique=False, default='static/logo/companyLogo.jpeg')
     industry = db.Column(db.String(60), nullable=False)
     numberOfEmployee = db.Column(db.Integer, nullable=True)
     annualRevenue = db.Column(db.Integer, nullable=True)
-    legalStructure = db.Column(db.String(20), nullable=True)
+    legalStructure = db.Column(db.String(20), nullable=False)
     address = db.Column(db.String(20), nullable=False)
     companyContact = db.Column(db.Integer, nullable=False, unique=True)
     website = db.Column(db.String(20), nullable=True)
-    DateOfCreation = db.Column(db.DateTime, nullable=True)
+    DateOfCreation = db.Column(db.DateTime, nullable=False)
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def __repr__(self):
         return f"Company('{self.companyName}')"

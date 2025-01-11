@@ -10,10 +10,17 @@ function LoginForm() {
     const { login } = useAuth();
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+       e.preventDefault();
         try {
-            const { data } = await axios.post("http://localhost:5000/api/login", formData);
-            login(data.access_token);
+            const response = await axios.post("http://localhost:5000/api/login", formData, {
+                headers:{
+                        "Content-Type": "application/json"
+                    },
+            });
+            console.log(response.data); // Log the entire response data object
+            console.log("Token received:", response.data.access_token);
+            login(response.data.access_token); // Use response.data here
+
         } catch (err) {
             console.error(err);
         }

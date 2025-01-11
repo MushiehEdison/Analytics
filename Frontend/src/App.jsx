@@ -8,6 +8,7 @@ import Home from "./components/Home";
 import RegistrationForm from "./components/Forms/RegistrationForm";
 import LoginForm from "./components/Forms/LoginForm";
 import { AuthProvider, useAuth } from "./components/Forms/AuthContent";  // Ensure this import path is correct
+import DataEntry from "./components/DaylyDataEntry/DataEntry";
 
 const App = () => {
   return (
@@ -28,7 +29,7 @@ const AuthWrapper = () => {
 };
 
 const MainApp = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, token  } = useAuth();
 
   return (
     <div style={{ color: "black" }}>
@@ -47,6 +48,7 @@ const MainApp = () => {
               <Route path="/report" element={<Report />} />
               <Route path="/riskmanagement" element={<RiskManagement />} />
               <Route path="/industryinsight" element={<IndustryInsight />} />
+              <Route path="/input" element={<DataEntry />} />
             </>
           )}
         </Routes>
