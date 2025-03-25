@@ -26,8 +26,11 @@ const StepTwoAccountDetails = ({ data, onChange }) => (
       onChange={(e) => onChange("role", e.target.value)}
     >
       <option value="">Select Role</option>
-      <option value="Admin">Admin</option>
-      <option value="Company Representative">Company Representative</option>
+      <option value="CEO">CEO</option>
+      <option value="Manager">Manager</option>
+      <option value="HRM">HRM</option>
+      <option value="Share Holdere">Share Holder</option>
+      <option value="IT Manaager">IT Manaager</option>
     </select>
   </div>
 );

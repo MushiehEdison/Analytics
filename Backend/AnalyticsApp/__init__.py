@@ -28,11 +28,11 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 jwt = JWTManager(app)
-CORS(app, resources={r"/*": {"origins": "http://localhost:5174"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
 
 login_manager.login_view = 'login'
 
 # Import routes
 from .routes import *
-from .models import Company, User
+from .models import Company, User, Risk, LegalCompliance, Alerts, EmployeeData,EmployeePerformance,Report, Inventory, FinancialData, CustomerFeedback, MarketingCampaign, SalesData

@@ -49,14 +49,7 @@ function TopNavBar() {
     return (
         <nav className="TopNavBar d-flex justify-content-between align-items-center text-dark py-3 px-4">
             <div className="logo fs-1 fw-bold">
-                <i className="fa-solid fa-compass mx-3"></i>Analytics
-            </div>
-
-            <div className="search-container">
-                <input type="text" className="search-input" placeholder="Search..." />
-                <button className="search-button">
-                    <i className="fa-solid fa-magnifying-glass"></i>
-                </button>
+                <i className="fa-solid fa-compass mx-3"></i>ONE
             </div>
 
             <div className="TopNavbarElements d-flex align-items-center">

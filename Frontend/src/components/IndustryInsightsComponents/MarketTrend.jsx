@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
+import axios from "axios";
 import {
   Chart as ChartJS,
   LineElement,
@@ -11,6 +12,7 @@ import {
   Filler,
 } from "chart.js";
 
+// Register Chart.js components
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend, Filler);
 
 const MarketTrends = () => {
@@ -18,31 +20,61 @@ const MarketTrends = () => {
   const [chartData, setChartData] = useState(null); // Dynamic chart data
   const [isLoading, setIsLoading] = useState(false); // Loading state
   const [error, setError] = useState(null); // Error state
+  const [randomTrends, setRandomTrends] = useState(null); // Random market trends
 
-  // Function to fetch trends from an API
+  // Fetch random market trends on component mount
+  useEffect(() => {
+    const fetchRandomTrends = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/random-trends");
+        const data = response.data;
+        console.log("Random Trends API Response:", data); // Debugging
+
+        const formattedData = {
+          labels: data.dates,
+          datasets: [
+            {
+              label: `Trends for "${data.query}"`,
+              data: data.values,
+              borderColor: "rgba(75, 192, 192, 1)",
+              backgroundColor: "rgba(75, 192, 192, 0.2)",
+              fill: true,
+              tension: 0.4,
+            },
+          ],
+        };
+        setRandomTrends({ ...formattedData, explanation: data.explanation });
+      } catch (err) {
+        console.error("Failed to fetch random trends:", err);
+      }
+    };
+
+    fetchRandomTrends();
+  }, []);
+
+  // Function to fetch Google Trends data
   const fetchTrends = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Example API URL (replace with a real API endpoint)
-      const response = await fetch(`https://api.example.com/trends?query=${query}`);
-      const data = await response.json();
+      const response = await axios.get(`http://localhost:5000/api/google-trends?query=${query}`);
+      const data = response.data;
+      console.log("Search Trends API Response:", data); // Debugging
 
-      // Transform the API data into Chart.js format
       const formattedData = {
-        labels: data.dates, // Example: ["Jan", "Feb", "Mar", ...]
+        labels: data.dates,
         datasets: [
           {
             label: `Trends for "${query}"`,
-            data: data.values, // Example: [30, 40, 50, ...]
+            data: data.values,
             borderColor: "rgba(75, 192, 192, 1)",
             backgroundColor: "rgba(75, 192, 192, 0.2)",
             fill: true,
-            tension: 0.4, // Smooth curves
+            tension: 0.4,
           },
         ],
       };
-      setChartData(formattedData);
+      setChartData({ ...formattedData, explanation: data.explanation });
     } catch (err) {
       setError("Failed to fetch market trends. Please try again.");
     } finally {
@@ -58,7 +90,7 @@ const MarketTrends = () => {
       <div style={styles.searchContainer}>
         <input
           type="text"
-          placeholder="Search for trends (e.g., 'Technology')"
+          placeholder="Search for trends (e.g., 'Bitcoin')"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           style={styles.searchInput}
@@ -68,12 +100,28 @@ const MarketTrends = () => {
         </button>
       </div>
 
+      {/* Random Market Trends Section */}
+      <div style={styles.randomTrendsContainer}>
+        <h3 style={styles.randomTrendsTitle}>What's Trending in the Market?</h3>
+        {randomTrends ? (
+          <div>
+            <Line data={randomTrends} options={chartOptions} />
+            <p style={styles.trendDescription}>{randomTrends.explanation}</p>
+          </div>
+        ) : (
+          <p style={styles.placeholderText}>Loading random trends...</p>
+        )}
+      </div>
+
       {/* Chart Section */}
       <div style={styles.chartContainer}>
         {isLoading && <p style={styles.loadingText}>Loading...</p>}
         {error && <p style={styles.errorText}>{error}</p>}
         {chartData ? (
-          <Line data={chartData} options={chartOptions} />
+          <div>
+            <Line data={chartData} options={chartOptions} />
+            <p style={styles.trendDescription}>{chartData.explanation}</p>
+          </div>
         ) : (
           <p style={styles.placeholderText}>Enter a query to see market trends.</p>
         )}
@@ -100,10 +148,20 @@ const chartOptions = {
     x: {
       grid: { display: false },
       ticks: { font: { size: 12 }, color: "#666" },
+      title: {
+        display: true,
+        text: "Date",
+        font: { size: 14, weight: "bold" },
+      },
     },
     y: {
       grid: { color: "rgba(200, 200, 200, 0.3)", drawBorder: false },
       ticks: { font: { size: 12 }, color: "#666" },
+      title: {
+        display: true,
+        text: "Interest Over Time",
+        font: { size: 14, weight: "bold" },
+      },
     },
   },
   elements: {
@@ -153,6 +211,26 @@ const styles = {
     border: "1px solid #eee",
     borderRadius: "8px",
     backgroundColor: "#f9f9f9",
+    marginBottom: "20px",
+  },
+  randomTrendsContainer: {
+    padding: "20px",
+    border: "1px solid #eee",
+    borderRadius: "8px",
+    backgroundColor: "#f9f9f9",
+    marginBottom: "20px",
+  },
+  randomTrendsTitle: {
+    textAlign: "center",
+    marginBottom: "20px",
+    color: "#333",
+    fontSize: "20px",
+  },
+  trendDescription: {
+    textAlign: "center",
+    color: "#666",
+    fontSize: "14px",
+    marginTop: "10px",
   },
   loadingText: {
     textAlign: "center",

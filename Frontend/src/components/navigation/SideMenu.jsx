@@ -16,13 +16,13 @@ function SideMenuBar() {
         <Link className="my-2 p-2" to="/">
           <li className="list-group-item d-flex align-items-center" style={{ background: 'none', border: 'none' }}>
             <i class="fa-solid fa-house text-secondary me-e"></i>
-            <span className="sideMenuText mx-3">Home</span>
+            <span className="sideMenuText mx-3">Overview</span>
           </li>
         </Link>
         <Link className="my-2 p-2" to="/analytics">
           <li className="list-group-item d-flex align-items-center" style={{ background: 'none', border: 'none' }}>
           <i class="fa-solid fa-chart-column text-info me-2"></i>
-            <span className="sideMenuText mx-3">Analytics</span>
+            <span className="sideMenuText mx-3">Data <br /> Visualization </span>
           </li>
         </Link>
        
@@ -35,20 +35,26 @@ function SideMenuBar() {
         <Link className="my-2 p-2" to="/riskmanagement">
           <li className="list-group-item d-flex align-items-center" style={{ background: 'none', border: 'none' }}>
             <i className="fas fa-chart-area text-primary me-2"></i>
-            <span className="sideMenuText mx-3">Risk <br />Management</span>
+            <span className="sideMenuText mx-3">Strategy <br /></span>
           </li>
         </Link>
         <Link className="my-2 p-2" to="/report">
           <li className="list-group-item d-flex align-items-center" style={{ background: 'none', border: 'none' }}>
             <i className="fa-solid fa-flag text-warning me-2"></i>
-            <span className="sideMenuText mx-3">Report &<br /> Insight</span>
+            <span className="sideMenuText mx-3">Report & <br /> Insight</span>
           </li>
         </Link> 
         <div className="my-5">
            <Link className="my-2 p-2" to="/input">
            <li className="d-flex align-items-center mx-3">
               <i className="fa-solid fa-edit text-dark"></i>
-              <span className="sideMenuText mx-3">Daily Input</span>
+              <span className="sideMenuText mx-3">Data</span>
+            </li>
+         </Link>
+         <Link className="my-2 p-2" to="#">
+           <li className="d-flex align-items-center mx-3">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span className="sideMenuText mx-3">Search</span>
             </li>
          </Link>
           <Link className="my-2 p-2" to="#">

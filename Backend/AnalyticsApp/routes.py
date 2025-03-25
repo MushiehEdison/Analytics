@@ -1,7 +1,14 @@
 from flask import request, jsonify
-from flask_login import login_required, current_user
+import random
+import requests
+from datetime import datetime
+import time
+import openai
+from pytrends.request import TrendReq
+import pytrends
+from .google_trends import fetch_google_trends
 from . import app, db, bcrypt
-from .models import User, Company
+from .models import User, Company, Inventory, EmployeeData, FinancialData, CustomerFeedback, MarketingCampaign, Production, SalesData, EmployeePerformance
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -116,3 +123,90 @@ def get_navigation():
     })
 
 
+
+
+
+
+#Market Trends ===================================================================================
+pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 30))
+def generate_trend_explanation(query, values):
+    try:
+        API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+        headers = {"Authorization": "Bearer sk-0eb381dab88749ab9eacb179f3239b03"}  # Free at huggingface.co
+
+        prompt = f"""Analyze this trend data for '{query}':
+        - Peak: {max(values)}
+        - Low: {min(values)} 
+        - Avg: {sum(values) / len(values):.2f}
+        Explain in simple terms for non-experts. Include:
+        1) Trend summary
+        2) Possible reasons for peaks/drops
+        3) Market growth insights
+        4) Future predictions
+        5) Real-world meaning of numbers"""
+
+        response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
+
+        if response.status_code == 200:
+            return response.json()[0]['generated_text']
+        else:
+            return f"Interest in {query} ranged from {min(values)} to {max(values)} (avg: {sum(values) / len(values):.2f})"
+
+    except Exception as e:
+        print(f"AI Error Details: {str(e)}")
+        return f"Trend analysis unavailable. Technical details: {str(e)}"
+
+
+# Function to fetch Google Trends data with retries
+def fetch_google_trends(query, retries=3, delay=5):
+    for attempt in range(retries):
+        try:
+            pytrends.build_payload(kw_list=[query], timeframe='today 12-m')
+            interest_over_time_df = pytrends.interest_over_time()
+
+            # Format dates to a more readable format (e.g., "Jan 2023")
+            dates = [datetime.strptime(date, "%Y-%m-%d").strftime("%b %Y") for date in interest_over_time_df.index.strftime('%Y-%m-%d').tolist()]
+
+            # Format the data for the frontend
+            trends_data = {
+                "query": query,
+                "dates": dates,  # Use formatted dates
+                "values": interest_over_time_df[query].tolist(),
+            }
+            return trends_data
+
+        except Exception as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+            if attempt < retries - 1:  # Don't sleep on the last attempt
+                time.sleep(delay)  # Wait before retrying
+            else:
+                raise  # Re-raise the exception if all retries fail
+
+@app.route('/api/google-trends', methods=['GET'])
+def get_google_trends():
+    query = request.args.get('query')
+    if not query:
+        return jsonify({"error": "Query parameter is required."}), 400
+
+    try:
+        trends_data = fetch_google_trends(query)
+        explanation = generate_trend_explanation(query, trends_data["values"])
+        trends_data["explanation"] = explanation
+        return jsonify(trends_data), 200
+    except Exception as e:
+        print(f"Error fetching Google Trends: {e}")
+        return jsonify({"error": "Failed to fetch Google Trends data."}), 500
+
+@app.route('/api/random-trends', methods=['GET'])
+def get_random_trends():
+    random_trends = ["Bitcoin", "Tesla", "AI", "Ethereum", "NFT", "Meta", "Apple", "Amazon"]
+    random_query = random_trends[random.randint(0, len(random_trends) - 1)]
+
+    try:
+        trends_data = fetch_google_trends(random_query)
+        explanation = generate_trend_explanation(random_query, trends_data["values"])
+        trends_data["explanation"] = explanation
+        return jsonify(trends_data), 200
+    except Exception as e:
+        print(f"Error fetching random trends: {e}")
+        return jsonify({"error": "Failed to fetch random trends."}), 500
