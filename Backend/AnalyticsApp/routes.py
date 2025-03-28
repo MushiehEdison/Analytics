@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 import random
 import requests
 from datetime import datetime
@@ -8,8 +8,11 @@ from pytrends.request import TrendReq
 import pytrends
 from .google_trends import fetch_google_trends
 from . import app, db, bcrypt
-from .models import User, Company, Inventory, EmployeeData, FinancialData, CustomerFeedback, MarketingCampaign, Production, SalesData, EmployeePerformance
+from .models import User, Company, Inventory, UploadedFile, EmployeeData, FinancialData, CustomerFeedback, MarketingCampaign, SalesData, EmployeePerformance
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+import os
+import json
+from werkzeug.utils import secure_filename
 @app.route('/api/register', methods=['POST'])
 def register():
     try:
@@ -123,10 +126,6 @@ def get_navigation():
     })
 
 
-
-
-
-
 #Market Trends ===================================================================================
 pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 30))
 def generate_trend_explanation(query, values):
@@ -210,3 +209,85 @@ def get_random_trends():
     except Exception as e:
         print(f"Error fetching random trends: {e}")
         return jsonify({"error": "Failed to fetch random trends."}), 500
+
+
+
+
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'pdf', 'xlsx', 'csv', 'docx', 'xls', 'doc'}
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/api/dataentry', methods=['POST'])
+@jwt_required()
+def data_entry():
+    try:
+        # Get authenticated user
+        current_user_email = get_jwt_identity()
+        user = User.query.filter_by(email=current_user_email).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Process form data
+        strategy_data = json.loads(request.form['strategyData'])
+        section = strategy_data.get('activeSection')
+
+        uploaded_files = []
+        file_path = None  # Initialize file_path variable
+
+        if 'files' in request.files:
+            for file in request.files.getlist('files'):
+                if file and file.filename and allowed_file(file.filename):
+                    try:
+                        # Secure filename and create unique path
+                        filename = secure_filename(file.filename)
+                        unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                        file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+
+                        # Save file to disk
+                        file.save(file_path)
+
+                        # Create database record
+                        new_file = UploadedFile(
+                            company_id=user.company_id,
+                            filename=filename,
+                            file_path=file_path,
+                            file_type=file.content_type,
+                            section=section
+                        )
+                        db.session.add(new_file)
+                        uploaded_files.append({
+                            'filename': filename,
+                            'section': section,
+                            'path': file_path
+                        })
+
+                    except Exception as file_error:
+                        # Clean up file if it was partially saved
+                        if file_path and os.path.exists(file_path):
+                            os.remove(file_path)
+                        db.session.rollback()
+                        return jsonify({
+                            'error': f'File upload failed: {str(file_error)}',
+                            'file': filename
+                        }), 500
+
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'company_id': user.company_id,
+            'files_uploaded': uploaded_files,
+            'section': section
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+

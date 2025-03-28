@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from "../Forms/AuthContent";
-import "../../App.css"
+import { useNavigate } from "react-router-dom";
+import "../../App.css";
 import Alert from '../PageComponents/Alert';
 import TopNavBar from '../navigation/TopNavBar';
 import SideMenuBar from '../navigation/SideMenu';
 
 const DataEntry = () => {
+    const { token } = useAuth();
+    const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('sales');
     const [formData, setFormData] = useState({
         sales: { productSales: '', clv: '', margin: '' },
@@ -17,7 +20,8 @@ const DataEntry = () => {
     });
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
-    const { token } = useAuth();
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
 
     const sections = [
         { id: 'sales', label: 'Sales Data', icon: 'dollar-sign' },
@@ -30,6 +34,8 @@ const DataEntry = () => {
     const handleFileUpload = (e) => {
         const uploadedFiles = Array.from(e.target.files);
         setFiles(uploadedFiles);
+        setError(null);
+        setSuccess(null);
     };
 
     const handleFileRemove = (index) => {
@@ -51,18 +57,36 @@ const DataEntry = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
+        setSuccess(null);
 
-        const formPayload = new FormData();
-        formPayload.append('strategyData', JSON.stringify(formData));
-        files.forEach(file => formPayload.append('evidence', file));
+        if (!token) {
+            setError("Authentication required. Please login.");
+            setLoading(false);
+            navigate('/login');
+            return;
+        }
 
         try {
-            await axios.post('https://api.strategy-tool.com/v1/core-inputs', formPayload, {
+            const formPayload = new FormData();
+
+            // Add form data
+            formPayload.append('strategyData', JSON.stringify({
+                ...formData,
+                activeSection: activeSection
+            }));
+
+            // Add files
+            files.forEach(file => formPayload.append('files', file));
+
+            const response = await axios.post('http://localhost:5000/api/dataentry', formPayload, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });
+
+            setSuccess(`Data for ${sections.find(s => s.id === activeSection).label} submitted successfully!`);
             setFiles([]);
             setFormData({
                 sales: { productSales: '', clv: '', margin: '' },
@@ -71,10 +95,50 @@ const DataEntry = () => {
                 financial: { revenue: '', profitMargin: '', roi: '' },
                 digitalMarketing: { conversions: '', adSpend: '', bounceRate: '' }
             });
+
         } catch (error) {
-            console.error('Submission error:', error);
+            console.error("Upload error:", error);
+            if (error.response) {
+                if (error.response.status === 401) {
+                    setError("Session expired. Please login again.");
+                    navigate('/login');
+                } else {
+                    setError(error.response.data.error || "Submission failed. Please try again.");
+                }
+            } else {
+                setError("Network error. Please check your connection.");
+            }
         } finally {
             setLoading(false);
+        }
+    };
+
+    // File upload descriptions for each section
+    const fileUploadDescriptions = {
+        sales: {
+            title: "Upload POS/ERP Data",
+            description: "Transaction History, Product Performance",
+            icon: "file-invoice"
+        },
+        customer: {
+            title: "Upload Customer Data",
+            description: "CRM exports, Survey results, Customer feedback",
+            icon: "user-friends"
+        },
+        operations: {
+            title: "Upload Operations Data",
+            description: "Production logs, Inventory reports, Employee records",
+            icon: "clipboard-check"
+        },
+        financial: {
+            title: "Upload Financial Documents",
+            description: "Balance sheets, Income statements, Cash flow reports",
+            icon: "file-invoice-dollar"
+        },
+        digitalMarketing: {
+            title: "Upload Marketing Data",
+            description: "Google Analytics, Ad campaign reports, Social media metrics",
+            icon: "chart-bar"
         }
     };
 
@@ -96,6 +160,19 @@ const DataEntry = () => {
                         </p>
                     </div>
 
+                    {error && (
+                        <div className="alert alert-danger mb-4">
+                            <i className="fas fa-exclamation-circle me-2"></i>
+                            {error}
+                        </div>
+                    )}
+                    {success && (
+                        <div className="alert alert-success mb-4">
+                            <i className="fas fa-check-circle me-2"></i>
+                            {success}
+                        </div>
+                    )}
+
                     <div className="data-nav">
                         {sections.map(section => (
                             <button
@@ -109,7 +186,7 @@ const DataEntry = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="enterprise-form">
-                        {/* Sales Data */}
+                        {/* Sales Data Section */}
                         {activeSection === 'sales' && (
                             <div className="form-section">
                                 <h3><i className="fas fa-dollar-sign"></i> Sales Performance</h3>
@@ -144,26 +221,10 @@ const DataEntry = () => {
                                         />
                                     </div>
                                 </div>
-                                <div className="file-upload-box">
-                                    <input
-                                        type="file"
-                                        id="salesDocuments"
-                                        multiple
-                                        accept=".xlsx,.csv,.pdf"
-                                        onChange={handleFileUpload}
-                                    />
-                                    <label htmlFor="salesDocuments" className="upload-label">
-                                        <div className="upload-content">
-                                            <i className="fas fa-file-invoice fa-2x"></i>
-                                            <p>Upload POS/ERP Data</p>
-                                            <p className="file-types">Transaction History, Product Performance</p>
-                                        </div>
-                                    </label>
-                                </div>
                             </div>
                         )}
 
-                        {/* Customer Data */}
+                        {/* Customer Data Section */}
                         {activeSection === 'customer' && (
                             <div className="form-section">
                                 <h3><i className="fas fa-users"></i> Customer Insights</h3>
@@ -179,19 +240,15 @@ const DataEntry = () => {
                                     </div>
                                     <div className="input-group">
                                         <label>Primary Location</label>
-                                        <select
+                                        <input
+                                            type="text"
                                             name="customer.location"
                                             value={formData.customer.location}
                                             onChange={handleInputChange}
-                                        >
-                                            <option value="">Select Region</option>
-                                            <option value="North America">North America</option>
-                                            <option value="Europe">Europe</option>
-                                            <option value="Asia-Pacific">APAC</option>
-                                        </select>
+                                        />
                                     </div>
                                     <div className="input-group">
-                                        <label>Monthly Purchases/Customer</label>
+                                        <label>Purchase Frequency (per year)</label>
                                         <input
                                             type="number"
                                             step="0.1"
@@ -201,43 +258,27 @@ const DataEntry = () => {
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Net Promoter Score</label>
+                                        <label>Net Promoter Score (0-10)</label>
                                         <input
                                             type="number"
                                             min="0"
-                                            max="100"
+                                            max="10"
                                             name="customer.nps"
                                             value={formData.customer.nps}
                                             onChange={handleInputChange}
                                         />
                                     </div>
                                 </div>
-                                <div className="file-upload-box">
-                                    <input
-                                        type="file"
-                                        id="customerDocuments"
-                                        multiple
-                                        accept=".pdf,.csv"
-                                        onChange={handleFileUpload}
-                                    />
-                                    <label htmlFor="customerDocuments" className="upload-label">
-                                        <div className="upload-content">
-                                            <i className="fas fa-file-contract fa-2x"></i>
-                                            <p>Upload CRM Data</p>
-                                            <p className="file-types">Customer Profiles, Survey Results</p>
-                                        </div>
-                                    </label>
-                                </div>
                             </div>
                         )}
 
-                        {/* Operations Data */}
+                        {/* Operations Data Section */}
                         {activeSection === 'operations' && (
                             <div className="form-section">
-                                <h3><i className="fas fa-cogs"></i> Operational Metrics</h3>
+                                <h3><i className="fas fa-cogs"></i> Operations Metrics</h3>
                                 <div className="form-grid">
                                     <div className="input-group">
-                                        <label>Production Cost/Unit ($)</label>
+                                        <label>Production Cost per Unit ($)</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -247,7 +288,7 @@ const DataEntry = () => {
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Inventory Turnover (Days)</label>
+                                        <label>Inventory Level (units)</label>
                                         <input
                                             type="number"
                                             name="operations.inventoryLevel"
@@ -256,7 +297,7 @@ const DataEntry = () => {
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Employee Performance Score</label>
+                                        <label>Employee Performance Score (1-10)</label>
                                         <input
                                             type="number"
                                             min="1"
@@ -267,29 +308,13 @@ const DataEntry = () => {
                                         />
                                     </div>
                                 </div>
-                                <div className="file-upload-box">
-                                    <input
-                                        type="file"
-                                        id="operationsDocuments"
-                                        multiple
-                                        accept=".xlsx,.pdf"
-                                        onChange={handleFileUpload}
-                                    />
-                                    <label htmlFor="operationsDocuments" className="upload-label">
-                                        <div className="upload-content">
-                                            <i className="fas fa-file-alt fa-2x"></i>
-                                            <p>Upload Operational Reports</p>
-                                            <p className="file-types">Production Logs, Inventory Reports</p>
-                                        </div>
-                                    </label>
-                                </div>
                             </div>
                         )}
 
-                        {/* Financial Data */}
+                        {/* Financial Data Section */}
                         {activeSection === 'financial' && (
                             <div className="form-section">
-                                <h3><i className="fas fa-chart-line"></i> Financial Health</h3>
+                                <h3><i className="fas fa-chart-line"></i> Financial Metrics</h3>
                                 <div className="form-grid">
                                     <div className="input-group">
                                         <label>Annual Revenue ($)</label>
@@ -312,7 +337,7 @@ const DataEntry = () => {
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Campaign ROI (%)</label>
+                                        <label>Return on Investment (%)</label>
                                         <input
                                             type="number"
                                             step="0.1"
@@ -322,32 +347,16 @@ const DataEntry = () => {
                                         />
                                     </div>
                                 </div>
-                                <div className="file-upload-box">
-                                    <input
-                                        type="file"
-                                        id="financialDocuments"
-                                        multiple
-                                        accept=".pdf,.xlsx"
-                                        onChange={handleFileUpload}
-                                    />
-                                    <label htmlFor="financialDocuments" className="upload-label">
-                                        <div className="upload-content">
-                                            <i className="fas fa-file-invoice-dollar fa-2x"></i>
-                                            <p>Upload Financial Statements</p>
-                                            <p className="file-types">Balance Sheets, Cash Flow Reports</p>
-                                        </div>
-                                    </label>
-                                </div>
                             </div>
                         )}
 
-                        {/* Digital Marketing Data */}
+                        {/* Digital Marketing Section */}
                         {activeSection === 'digitalMarketing' && (
                             <div className="form-section">
-                                <h3><i className="fas fa-bullhorn"></i> Marketing Performance</h3>
+                                <h3><i className="fas fa-bullhorn"></i> Digital Marketing</h3>
                                 <div className="form-grid">
                                     <div className="input-group">
-                                        <label>Monthly Conversions</label>
+                                        <label>Conversions (per month)</label>
                                         <input
                                             type="number"
                                             name="digitalMarketing.conversions"
@@ -356,7 +365,7 @@ const DataEntry = () => {
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Ad Spend ($)</label>
+                                        <label>Ad Spend ($ per month)</label>
                                         <input
                                             type="number"
                                             name="digitalMarketing.adSpend"
@@ -375,35 +384,62 @@ const DataEntry = () => {
                                         />
                                     </div>
                                 </div>
-                                <div className="file-upload-box">
-                                    <input
-                                        type="file"
-                                        id="marketingDocuments"
-                                        multiple
-                                        accept=".csv,.pdf"
-                                        onChange={handleFileUpload}
-                                    />
-                                    <label htmlFor="marketingDocuments" className="upload-label">
-                                        <div className="upload-content">
-                                            <i className="fas fa-file-chart-line fa-2x"></i>
-                                            <p>Upload Marketing Analytics</p>
-                                            <p className="file-types">Google Analytics Reports, Campaign Data</p>
-                                        </div>
-                                    </label>
-                                </div>
                             </div>
                         )}
 
-                        <div className="form-actions">
+                        {/* File Upload Section (Dynamic based on active section) */}
+                        <div className="file-upload-box mt-4">
+                            <input
+                                type="file"
+                                id={`${activeSection}Documents`}
+                                multiple
+                                accept=".xlsx,.csv,.pdf,.doc,.docx"
+                                onChange={handleFileUpload}
+                            />
+                            <label htmlFor={`${activeSection}Documents`} className="upload-label">
+                                <div className="upload-content">
+                                    <i className={`fas fa-${fileUploadDescriptions[activeSection].icon} fa-2x`}></i>
+                                    <p>{fileUploadDescriptions[activeSection].title}</p>
+                                    <p className="file-types">{fileUploadDescriptions[activeSection].description}</p>
+                                </div>
+                            </label>
+                            {files.length > 0 && (
+                                <div className="uploaded-files mt-3">
+                                    <h5>Selected Files:</h5>
+                                    <ul className="list-group">
+                                        {files.map((file, index) => (
+                                            <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                                                {file.name}
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-danger"
+                                                    onClick={() => handleFileRemove(index)}
+                                                >
+                                                    <i className="fas fa-times"></i>
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="form-actions mt-4">
                             <button
                                 type="submit"
                                 className="submit-btn"
                                 disabled={loading}
                             >
                                 {loading ? (
-                                    <><i className="fas fa-spinner fa-spin"></i> Analyzing...</>
+                                    <>
+                                        <i className="fas fa-spinner fa-spin me-2"></i>
+                                        Processing...
+                                    </>
                                 ) : (
-                                    <><i className="fas fa-chart-pie"></i> Generate Strategy Report</>
+                                    <>
+                                        <i className="fas fa-chart-pie me-2"></i>
+                                        Generate Strategy Report
+                                    </>
                                 )}
                             </button>
                         </div>

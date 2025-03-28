@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Bubble } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -7,32 +7,49 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import axios from "axios";
 
-// Register Chart.js modules
 ChartJS.register(LinearScale, PointElement, Tooltip, Legend);
 
 const CompetitorComparisonPage = () => {
-  const competitors = [
-    { name: "Company A", logo: "https://via.placeholder.com/50", performance: 90, industry: "Tech" },
-    { name: "Company B", logo: "https://via.placeholder.com/50", performance: 80, industry: "Retail" },
-    { name: "Company C", logo: "https://via.placeholder.com/50", performance: 70, industry: "Logistics" },
-    { name: "Company D", logo: "https://via.placeholder.com/50", performance: 85, industry: "Tech" },
-    { name: "Company E", logo: "https://via.placeholder.com/50", performance: 65, industry: "Retail" },
-  ];
+  const [rankings, setRankings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedIndustry, setSelectedIndustry] = useState("tech"); // Default to tech
 
-  const [selectedIndustry, setSelectedIndustry] = useState("All");
+  // Fetch rankings when industry changes
+  useEffect(() => {
+    const fetchRankings = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/industry-rankings/${selectedIndustry}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        setRankings(response.data.rankings);
+      } catch (err) {
+        setError(err.response?.data?.error || "Failed to fetch rankings");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Filtered competitors for the sidebar
-  const filteredCompetitors =
-    selectedIndustry === "All"
-      ? competitors
-      : competitors.filter((comp) => comp.industry === selectedIndustry);
+    fetchRankings();
+  }, [selectedIndustry]);
 
   // Bubble chart data
   const bubbleData = {
-    datasets: competitors.map((comp, index) => ({
+    datasets: rankings.map((comp, index) => ({
       label: comp.name,
-      data: [{ x: Math.random() * 100, y: comp.performance, r: comp.performance / 10 }],
+      data: [{
+        x: index * 10,
+        y: comp.performance,
+        r: Math.abs(comp.performance) / 2
+      }],
       backgroundColor: `rgba(${(index + 1) * 50}, ${(index + 2) * 40}, ${(index + 3) * 60}, 0.6)`,
     })),
   };
@@ -41,47 +58,67 @@ const CompetitorComparisonPage = () => {
     <div style={{ display: "flex", flexDirection: "row", gap: "20px" }}>
       {/* Main Comparison Chart */}
       <div style={{ flex: 3 }}>
-        <h2>Competitor Comparison</h2>
-        <Bubble data={bubbleData} />
+        <h2>{selectedIndustry.toUpperCase()} Industry Rankings</h2>
+        {loading ? (
+          <p>Loading chart data...</p>
+        ) : (
+          <Bubble
+            data={bubbleData}
+            options={{
+              scales: {
+                y: {
+                  title: { display: true, text: 'Performance (%)' }
+                },
+                x: {
+                  display: false // Hide x-axis as it's just for spacing
+                }
+              }
+            }}
+          />
+        )}
       </div>
 
       {/* Sidebar Ranking */}
       <div style={{ flex: 1, border: "1px solid #ddd", padding: "10px", borderRadius: "8px" }}>
-        <h3>Company Ranking</h3>
-        <label>Filter by Industry:</label>
+        <h3>Top Companies</h3>
+        <label>Industry:</label>
         <select
           value={selectedIndustry}
           onChange={(e) => setSelectedIndustry(e.target.value)}
           style={{ width: "100%", padding: "5px", marginBottom: "10px" }}
         >
-          <option value="All">All Industries</option>
-          <option value="Tech">Tech</option>
-          <option value="Retail">Retail</option>
-          <option value="Logistics">Logistics</option>
+          <option value="tech">Technology</option>
+          <option value="retail">Retail</option>
+          <option value="logistics">Logistics</option>
         </select>
 
+        {error && <p style={{ color: "red" }}>{error}</p>}
+
         <ul style={{ listStyle: "none", padding: 0 }}>
-          {filteredCompetitors
-            .sort((a, b) => b.performance - a.performance)
-            .map((comp, index) => (
-              <li
-                key={index}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginBottom: "10px",
-                  borderBottom: "1px solid #eee",
-                  paddingBottom: "5px",
-                }}
-              >
-                <img
-                  src={comp.logo}
-                  alt={comp.name}
-                  style={{ width: "30px", height: "30px", marginRight: "10px", borderRadius: "50%" }}
-                />
-                <span>{comp.name}</span>
-              </li>
-            ))}
+          {rankings.map((comp) => (
+            <li
+              key={comp.rank}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: "10px",
+                borderBottom: "1px solid #eee",
+                paddingBottom: "5px",
+              }}
+            >
+              <span style={{
+                fontWeight: "bold",
+                marginRight: "10px",
+                color: comp.performance > 0 ? 'green' : 'red'
+              }}>
+                #{comp.rank}
+              </span>
+              <span>{comp.name}</span>
+              <span style={{ marginLeft: "auto" }}>
+                {comp.performance > 0 ? '+' : ''}{comp.performance}%
+              </span>
+            </li>
+          ))}
         </ul>
       </div>
     </div>

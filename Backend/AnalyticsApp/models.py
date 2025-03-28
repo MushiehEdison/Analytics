@@ -52,7 +52,8 @@ class Company(db.Model):
     reports = db.relationship('Report', back_populates='company')
     risks = db.relationship('Risk', back_populates='company')
     sales = db.relationship('SalesData', back_populates='company')
-    production = db.relationship('Production', back_populates='company')
+    operations = db.relationship('Operation', back_populates='company')
+    uploadedfile = db.relationship('UploadedFile', back_populates='company')
     def __repr__(self):
         return f"Company('{self.companyName}')"
 
@@ -247,23 +248,41 @@ class SalesData(db.Model):
     def __repr__(self):
         return f"SalesData('{self.TotalSalesRevenue}', '{self.UnitsSold}', '{self.Date}')"
 
-class Production(db.Model):
-    __tablename__ = 'production_data'
-    ProductionID = db.Column(db.Integer, primary_key=True)
-    CompanyID = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
-    UnitProduced = db.Column(db.Integer, nullable=False)
-    DefectiveUnits = db.Column(db.Integer, nullable=False)
-    DownTime = db.Column(db.Float, nullable=False)
-    ResourcesUtilization = db.Column(db.Float, nullable=False)
-    OperatingHours = db.Column(db.Float, nullable=False)
-    WorkerAttendance = db.Column(db.Integer, nullable=False)
-    EnergyConsumption = db.Column(db.Float, nullable=False)
-    OvertimeHours = db.Column(db.Float, nullable=False)
-    ProductionCosts = db.Column(db.Float, nullable=False)
-    Description = db.Column(db.String(255), nullable=False)
-    Materials = db.Column(db.String(255), nullable=False)  # Consider using JSON if you have a complex structure
+class Operation(db.Model):
+    __tablename__ = 'operations'
 
-    company = db.relationship('Company', back_populates='production')
+    operation_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    CompanyID = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    operation_type = db.Column(db.String(100), nullable=False)  # Type of operation    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=True)  # Responsible employee
+    start_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime, nullable=True)
+    status = db.Column(db.Enum('Pending', 'Ongoing', 'Completed', 'Failed'), nullable=False)
+    cost = db.Column(db.Float, default=0.0)
+    output = db.Column(db.Integer, default=0)
+    defective_units = db.Column(db.Integer, default=0)
+    downtime = db.Column(db.Float, default=0.0)
+    resource_utilization = db.Column(db.Float, default=0.0)
+    operating_hours = db.Column(db.Float, default=0.0)
+    worker_attendance = db.Column(db.Integer, default=0)
+    energy_consumption = db.Column(db.Float, default=0.0)
+    overtime_hours = db.Column(db.Float, default=0.0)
+    description = db.Column(db.String(255), nullable=True)
+    materials = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())  # Last update time
+
+    company = db.relationship('Company', back_populates='operations')
 
     def __repr__(self):
-        return f"<Production {self.ProductionID}>"
+        return f"<Operation {self.operation_id}, Type: {self.operation_type}, Status: {self.status}>"
+
+class UploadedFile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'))
+    filename = db.Column(db.String(255))
+    file_path = db.Column(db.String(255))  # Store file path instead of data
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    file_type = db.Column(db.String(100))
+    section = db.Column(db.String(100))
+
+    company = db.relationship('Company', back_populates='uploadedfile')
