@@ -5,6 +5,7 @@ from flask_login import LoginManager
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 import os
+from flask_caching import Cache
 
 # Initialize Flask app
 app = Flask(__name__)

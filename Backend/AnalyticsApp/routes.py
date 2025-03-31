@@ -12,6 +12,9 @@ from .models import User, Company, Inventory, UploadedFile, EmployeeData, Financ
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import os
 import json
+import yfinance as yf
+from concurrent.futures import ThreadPoolExecutor
+
 from werkzeug.utils import secure_filename
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -211,8 +214,6 @@ def get_random_trends():
         return jsonify({"error": "Failed to fetch random trends."}), 500
 
 
-
-
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'xlsx', 'csv', 'docx', 'xls', 'doc'}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -289,5 +290,150 @@ def data_entry():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+INDUSTRY_STOCKS = {
+    'tech': ['MSFT', 'AAPL', 'NVDA', 'GOOGL', 'META', 'TSM', 'AVGO', 'ORCL', 'ADBE', 'CSCO'],
+    'retail': ['WMT', 'AMZN', 'TGT', 'COST', 'HD', 'LOW', 'BABA', 'JD', 'PDD', 'F'],
+    'logistics': ['UPS', 'FDX', 'DHL', 'EXPD', 'CHRW', 'ZTO', 'KNX', 'SAIA', 'ODFL', 'XPO']
+}
+
+def get_stock_data(ticker):
+    try:
+        stock = yf.Ticker(ticker)
+        data = stock.history(period='1d')
+        if not data.empty:
+            open_price = data['Open'].iloc[0]
+            current_price = data['Close'].iloc[-1]
+            change_pct = ((current_price - open_price) / open_price) * 100
+            return {
+                'symbol': ticker,
+                'name': stock.info.get('shortName', ticker),
+                'price': round(current_price, 2),
+                'change_pct': round(change_pct, 2)
+            }
+    except Exception as e:
+        print(f"Error fetching {ticker}: {str(e)}")
+    return None
+
+@app.route('/api/industry-rankings/<industry>', methods=['GET'])
+@jwt_required()
+def get_industry_rankings(industry):
+    try:
+        # Get tickers for the requested industry
+        tickers = INDUSTRY_STOCKS.get(industry.lower(), [])
+        if not tickers:
+            return jsonify({"error": "Industry not supported"}), 400
+
+        # Fetch all stock data in parallel
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            results = list(filter(None, executor.map(get_stock_data, tickers)))
+
+        # Sort by performance (descending)
+        rankings = sorted(results, key=lambda x: x['change_pct'], reverse=True)
+
+        return jsonify({
+            "industry": industry,
+            "rankings": [{
+                "rank": idx + 1,
+                "symbol": item['symbol'],
+                "name": item['name'],
+                "price": item['price'],
+                "performance": item['change_pct']
+            } for idx, item in enumerate(rankings)]
+        })
+
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "Failed to fetch rankings"}), 500
+
+NEWSDATA_API_KEY = "pub_770266b4c32ba028962fc04302bd135876ca5"
 
 
+@app.route('/api/market-news/<market>')
+def get_market_news(market):
+    try:
+        query_map = {
+            'tech': 'technology',
+            'finance': 'finance',
+            'energy': 'energy',
+            'healthcare': 'healthcare',
+            'retail': 'retail'
+        }
+
+        query = query_map.get(market.lower(), 'business')
+
+        url = f"https://newsdata.io/api/1/news?apikey={NEWSDATA_API_KEY}&q={query}&language=en"
+
+        response = requests.get(url)
+        response.raise_for_status()
+
+        articles = response.json().get('results', [])
+
+        processed_articles = []
+        for article in articles[:10]:  # limit to 10 articles
+            processed_articles.append({
+                'id': hash(article['link']),
+                'title': article['title'],
+                'source': article['source_id'],
+                'date': article['pubDate'][:10],
+                'type': 'news',
+                'summary': article['description'] or article['content'][:200] + '...',
+                'impact': 'medium',
+                'url': article['link']
+            })
+
+        return jsonify(processed_articles)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+def fetch_cameroon_data():
+    """Fetch Cameroon-specific indicators from World Bank"""
+    indicators = {
+        "agriculture_growth": "NV.AGR.TOTL.KD.ZG",  # Agriculture value added (% of GDP)
+        "industry_growth": "NV.IND.TOTL.KD.ZG",  # Industry growth (%)
+        "services_growth": "NV.SRV.TOTL.KD.ZG",  # Services growth (%)
+        "gdp_growth": "NY.GDP.MKTP.KD.ZG"  # GDP growth (%)
+    }
+
+    data = {}
+    for key, indicator in indicators.items():
+        url = f"https://api.worldbank.org/v2/country/CM/indicator/{indicator}?format=json&date=2022"
+        response = requests.get(url).json()
+        latest_value = next((item for item in response[1] if item["value"] is not None), None)
+        data[key] = latest_value["value"] if latest_value else None
+
+    return data
+
+
+@app.route('/api/cameroon-opportunities')
+def cameroon_opportunities():
+    try:
+        indicators = fetch_cameroon_data()
+
+        # Analyze opportunities based on growth rates
+        opportunities = []
+        if indicators["agriculture_growth"] and indicators["agriculture_growth"] > 3:
+            opportunities.append({
+                "sector": "Agriculture",
+                "growth": indicators["agriculture_growth"],
+                "reason": "High growth in agri-value addition",
+                "subsectors": ["Agro-processing", "Organic farming", "Export crops"]
+            })
+
+        if indicators["services_growth"] and indicators["services_growth"] > 5:
+            opportunities.append({
+                "sector": "Services",
+                "growth": indicators["services_growth"],
+                "reason": "Booming digital and financial services",
+                "subsectors": ["FinTech", "E-commerce", "ICT Outsourcing"]
+            })
+
+        return jsonify({
+            "indicators": indicators,
+            "opportunities": opportunities,
+            "last_updated": "2022"  # World Bank data lags by 1-2 years
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

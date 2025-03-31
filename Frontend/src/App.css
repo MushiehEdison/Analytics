@@ -7,7 +7,7 @@
   }
 
 /* Home Section ///////////////////////////////////////////////////// */
-.homeSection, .growthSection, .analyticSection, .reportSection, .trendSection, .dailydata{
+.homeSection, .growthSection, .analyticSection, .reportSection, .trendSection, .dailydata, .search{
   position: absolute;
   left: 180px;
   top: 100px;

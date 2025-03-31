@@ -51,13 +51,13 @@ function SideMenuBar() {
               <span className="sideMenuText mx-3">Data</span>
             </li>
          </Link>
-         <Link className="my-2 p-2" to="#">
+         <Link className="my-2 p-2" to="/search">
            <li className="d-flex align-items-center mx-3">
               <i class="fa-solid fa-magnifying-glass"></i>
               <span className="sideMenuText mx-3">Search</span>
             </li>
          </Link>
-          <Link className="my-2 p-2" to="#">
+          <Link className="my-2 p-2" to="">
            <li className="d-flex align-items-center mx-3">
               <i className="fa-solid fa-gear text-secondary"></i>
               <span className="sideMenuText mx-3">Setting</span>

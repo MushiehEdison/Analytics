@@ -1,197 +1,135 @@
 import React, { useState, useEffect } from "react";
-import { Radar } from "react-chartjs-2";
+import { Card, Container, Row, Col, Badge, Button, Spinner, Alert } from "react-bootstrap";
 
-const StrengthsWeaknesses = ({ apiEndpoint }) => {
-  const [data, setData] = useState([]);
+const MarketUpdates = ({ market = 'tech' }) => {
+  const [updates, setUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState("table"); // "table" or "chart"
-  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
 
-  // Fetch data from the API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-            const response = await fetch('https://www.cbinsights.com');
-        const result = await response.json();
-        setData(result);
+        setError(null);
+
+        const response = await fetch(`http://localhost:5000/api/market-news/${market}`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Add some variety to the types (for demo purposes)
+        const typedData = data.map((item, index) => ({
+          ...item,
+          type: ['news', 'trends', 'analysis'][index % 3],
+          impact: ['high', 'medium', 'medium'][index % 3]
+        }));
+
+        setUpdates(typedData);
       } catch (err) {
-        setError("Failed to load data.");
+        setError(err.message || "Failed to load market updates");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [apiEndpoint]);
 
-  // Filtered data based on search input
-  const filteredData = data.filter(
-    (item) =>
-      item.category.toLowerCase().includes(search.toLowerCase()) ||
-      item.strengths.some((s) => s.toLowerCase().includes(search.toLowerCase())) ||
-      item.weaknesses.some((w) => w.toLowerCase().includes(search.toLowerCase()))
-  );
+    // Set up polling for real-time updates (every 5 minutes)
+    const interval = setInterval(fetchData, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [market]);
+
+  const filteredUpdates = filter === "all"
+    ? updates
+    : updates.filter(update => update.type === filter);
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>Strengths & Weaknesses</h2>
-
-      {/* Search and View Toggle */}
-      <div style={styles.topBar}>
-        <input
-          type="text"
-          placeholder="Search by category or keyword..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={styles.searchInput}
-        />
-        <div style={styles.toggleContainer}>
-          <button
-            style={viewMode === "table" ? styles.activeButton : styles.toggleButton}
-            onClick={() => setViewMode("table")}
-          >
-            Table View
-          </button>
-          <button
-            style={viewMode === "chart" ? styles.activeButton : styles.toggleButton}
-            onClick={() => setViewMode("chart")}
-          >
-            Chart View
-          </button>
+    <div className="p-4">
+      <Container fluid>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h2 className="mb-0">Latest {market.charAt(0).toUpperCase() + market.slice(1)} Market Updates</h2>
+          <div className="d-flex gap-2">
+            <Button
+              variant={filter === "all" ? "dark" : "outline-dark"}
+              size="sm"
+              onClick={() => setFilter("all")}
+            >
+              All Updates
+            </Button>
+            <Button
+              variant={filter === "trends" ? "dark" : "outline-dark"}
+              size="sm"
+              onClick={() => setFilter("trends")}
+            >
+              Trends
+            </Button>
+            <Button
+              variant={filter === "news" ? "dark" : "outline-dark"}
+              size="sm"
+              onClick={() => setFilter("news")}
+            >
+              News
+            </Button>
+            <Button
+              variant={filter === "analysis" ? "dark" : "outline-dark"}
+              size="sm"
+              onClick={() => setFilter("analysis")}
+            >
+              Analysis
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Content */}
-      {loading ? (
-        <p>Loading...</p>
-      ) : error ? (
-        <p style={styles.error}>{error}</p>
-      ) : filteredData.length === 0 ? (
-        <p style={styles.noData}>No matching data found.</p>
-      ) : viewMode === "table" ? (
-        <div style={styles.tableContainer}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th>Strengths</th>
-                <th>Weaknesses</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.category}</td>
-                  <td style={styles.strengthsCell}>{item.strengths.join(", ")}</td>
-                  <td style={styles.weaknessesCell}>{item.weaknesses.join(", ")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <Radar
-          data={{
-            labels: filteredData.map((item) => item.category),
-            datasets: [
-              {
-                label: "Strengths",
-                data: filteredData.map((item) => item.strengthScore),
-                backgroundColor: "rgba(75, 192, 192, 0.2)",
-                borderColor: "rgba(75, 192, 192, 1)",
-              },
-              {
-                label: "Weaknesses",
-                data: filteredData.map((item) => item.weaknessScore),
-                backgroundColor: "rgba(255, 99, 132, 0.2)",
-                borderColor: "rgba(255, 99, 132, 1)",
-              },
-            ],
-          }}
-          options={{
-            responsive: true,
-            plugins: { legend: { position: "top" } },
-            scales: { r: { suggestedMin: 0, suggestedMax: 10 } },
-          }}
-        />
-      )}
+        {loading ? (
+          <div className="text-center py-5">
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+          </div>
+        ) : error ? (
+          <Alert variant="danger">{error}</Alert>
+        ) : (
+          <Row className="g-4">
+            {filteredUpdates.map((update) => (
+              <Col key={update.id} xl={6} lg={12}>
+                <Card className="h-100 border">
+                  <Card.Body>
+                    <div className="d-flex justify-content-between mb-2">
+                      <Badge bg={update.impact === "high" ? "dark" : "secondary"}>
+                        {update.type.toUpperCase()}
+                      </Badge>
+                      <small className="text-muted">
+                        {new Date(update.date).toLocaleDateString()} • {update.source}
+                      </small>
+                    </div>
+                    <Card.Title className="mb-3">{update.title}</Card.Title>
+                    <Card.Text>{update.summary}</Card.Text>
+                  </Card.Body>
+                  <Card.Footer className="bg-transparent border-0">
+                    <Button
+                      variant="outline-dark"
+                      size="sm"
+                      onClick={() => window.open(update.url, '_blank')}
+                    >
+                      Read Full Report
+                    </Button>
+                  </Card.Footer>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
+      </Container>
     </div>
   );
 };
 
-// Inline Styles for Responsive Design
-const styles = {
-  container: {
-    padding: "20px",
-    backgroundColor: "#fff",
-    borderRadius: "8px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    maxWidth: "900px",
-    margin: "auto",
-  },
-  title: {
-    textAlign: "center",
-    marginBottom: "20px",
-    color: "#333",
-    fontSize: "24px",
-  },
-  topBar: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-    gap: "10px",
-  },
-  searchInput: {
-    flex: 1,
-    padding: "10px",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
-    fontSize: "16px",
-  },
-  toggleContainer: {
-    display: "flex",
-    gap: "10px",
-  },
-  toggleButton: {
-    padding: "10px 20px",
-    backgroundColor: "#ddd",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
-  activeButton: {
-    padding: "10px 20px",
-    backgroundColor: "#007BFF",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
-  tableContainer: {
-    overflowX: "auto",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    margin: "auto",
-  },
-  strengthsCell: {
-    color: "green",
-  },
-  weaknessesCell: {
-    color: "red",
-  },
-  error: {
-    color: "red",
-    textAlign: "center",
-  },
-  noData: {
-    textAlign: "center",
-    color: "#666",
-  },
-};
-
-export default StrengthsWeaknesses;
+export default MarketUpdates;

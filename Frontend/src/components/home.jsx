@@ -52,7 +52,7 @@ function Home() {
         {/* Welcome Section */}
         <div className="welcomeSection text-center mb-5">
           <h5>
-            Welcome to MarketDSS – your AI-powered decision support system for marketing strategies.
+            Welcome to Analytics – your AI-powered decision support system for marketing strategies.
             Get real-time insights, analyze industry trends, and make data-driven decisions with confidence.
           </h5>
         </div>

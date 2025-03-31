@@ -9,7 +9,7 @@ import RegistrationForm from "./components/Forms/RegistrationForm";
 import LoginForm from "./components/Forms/LoginForm";
 import { AuthProvider, useAuth } from "./components/Forms/AuthContent";  // Ensure this import path is correct
 import DataEntry from "./components/DaylyDataEntry/DataEntry";
-
+import Search from "./components/search"
 const App = () => {
   return (
     <Router>
@@ -49,6 +49,7 @@ const MainApp = () => {
               <Route path="/riskmanagement" element={<RiskManagement />} />
               <Route path="/industryinsight" element={<IndustryInsight />} />
               <Route path="/input" element={<DataEntry />} />
+              <Route path="/search" element={<Search />} />
             </>
           )}
         </Routes>

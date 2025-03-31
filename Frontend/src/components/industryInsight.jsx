@@ -6,7 +6,7 @@ import MarketTrends from "./IndustryInsightsComponents/MarketTrend";
 import CompetitorComparisonPage from "./IndustryInsightsComponents/CompetitorComparism";
 import GrowthOpportunities from "./IndustryInsightsComponents/GrowthOpportunities";
 import RiskIndicators from "./IndustryInsightsComponents/RiskIndicators";
-import StrengthsWeaknesses from "./IndustryInsightsComponents/StrengthWeaknesses";
+import MarketUpdates from "./IndustryInsightsComponents/StrengthWeaknesses";
 import SuccessStories from "./IndustryInsightsComponents/SuccessStories";
 
 function IndustryInsight() {
@@ -16,11 +16,9 @@ function IndustryInsight() {
   const sections = [
     "Market Trends",
     "Competitor Comparison",
-    "Strengths & Weaknesses",
+    "Industry Updates",
     "Growth Opportunities",
-    "Risk Indicators",
     "Success Stories",
-    "Custom Filters",
   ];
 
   return (
@@ -74,11 +72,9 @@ function IndustryInsight() {
       <div className="content">
         {activeSection === "Market Trends" && <MarketTrends />}
         {activeSection === "Competitor Comparison" && <CompetitorComparisonPage />}
-        {activeSection === "Strengths & Weaknesses" && <StrengthsWeaknesses />}
+        {activeSection === "Industry Updates" && <MarketUpdates />}
         {activeSection === "Growth Opportunities" && <GrowthOpportunities />}
-        {activeSection === "Risk Indicators" && <RiskIndicators />}
         {activeSection === "Success Stories" && <SuccessStories />}
-        {activeSection === "Custom Filters" && <CustomFilters />}
       </div>
     </div>
         </div>

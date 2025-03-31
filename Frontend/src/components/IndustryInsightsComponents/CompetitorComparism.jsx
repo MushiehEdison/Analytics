@@ -26,32 +26,40 @@ const CompetitorComparisonPage = () => {
           `http://localhost:5000/api/industry-rankings/${selectedIndustry}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
           }
         );
-        setRankings(response.data.rankings);
+
+        setRankings(response.data.rankings.map(item => ({
+          rank: item.rank,
+          name: `${item.name} (${item.symbol})`,
+          performance: item.performance,
+          price: item.price
+        })));
+
       } catch (err) {
         setError(err.response?.data?.error || "Failed to fetch rankings");
       } finally {
         setLoading(false);
       }
     };
-
     fetchRankings();
   }, [selectedIndustry]);
 
-  // Bubble chart data
+  // Bubble chart data - SINGLE DEFINITION
   const bubbleData = {
-    datasets: rankings.map((comp, index) => ({
-      label: comp.name,
+    datasets: rankings.map((item, index) => ({
+      label: item.name,
       data: [{
         x: index * 10,
-        y: comp.performance,
-        r: Math.abs(comp.performance) / 2
+        y: item.performance,
+        r: Math.abs(item.performance) / 2
       }],
-      backgroundColor: `rgba(${(index + 1) * 50}, ${(index + 2) * 40}, ${(index + 3) * 60}, 0.6)`,
-    })),
+      backgroundColor: item.performance > 0
+        ? 'rgba(75, 192, 192, 0.6)'
+        : 'rgba(255, 99, 132, 0.6)'
+    }))
   };
 
   return (
@@ -125,4 +133,4 @@ const CompetitorComparisonPage = () => {
   );
 };
 
-export default CompetitorComparisonPage;
+export default CompetitorComparisonPage

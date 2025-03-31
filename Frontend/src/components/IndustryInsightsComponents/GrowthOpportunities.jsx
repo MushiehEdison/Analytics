@@ -1,113 +1,177 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Pie } from "react-chartjs-2";
+import { Card, Badge, ProgressBar } from "react-bootstrap";
 
 const GrowthOpportunities = () => {
-  const pieData = {
+  const [pieData, setPieData] = useState({
     labels: ["E-Commerce", "Tech Services", "Retail", "Logistics"],
-    datasets: [
-      {
-        data: [30, 25, 20, 25],
-        backgroundColor: ["#36a2eb", "#ff6384", "#ffcd56", "#4bc0c0"],
-      },
-    ],
+    datasets: [{
+      data: [0, 0, 0, 0], // Initialize with zeros
+      backgroundColor: ["#36a2eb", "#ff6384", "#ffcd56", "#4bc0c0"],
+    }]
+  });
+
+  const [opportunities, setOpportunities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('http://your-flask-backend/api/growth-opportunities');
+        const data = await response.json();
+
+        // Update pie chart data
+        setPieData(prev => ({
+          ...prev,
+          datasets: [{
+            ...prev.datasets[0],
+            data: [
+              data.ecommerce.growth,
+              data.tech_services.growth,
+              data.retail.growth,
+              data.logistics.growth
+            ]
+          }]
+        }));
+
+        // Update opportunities list
+        setOpportunities([
+          {
+            industry: "E-Commerce",
+            opportunity: data.ecommerce.opportunity,
+            growth: data.ecommerce.growth,
+            risk: data.ecommerce.risk,
+            investment: data.ecommerce.investment,
+            action: data.ecommerce.action
+          },
+          // ... other industries
+        ]);
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="text-center my-5">Loading growth opportunities...</div>;
+  }
+
+  const riskVariant = (risk) => {
+    switch(risk.toLowerCase()) {
+      case 'high': return 'danger';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
+      default: return 'secondary';
+    }
   };
 
-  const opportunities = [
-    {
-      industry: "E-Commerce",
-      opportunity: "Expanding online retail platforms",
-      growth: "30%",
-      risk: "Medium",
-      investment: "High",
-      action: "Invest in seamless user experiences and logistics support",
-    },
-    {
-      industry: "Tech Services",
-      opportunity: "AI & Automation Services",
-      growth: "25%",
-      risk: "Low",
-      investment: "Medium",
-      action: "Focus on R&D and partnerships with tech innovators",
-    },
-    {
-      industry: "Retail",
-      opportunity: "Sustainable Products",
-      growth: "20%",
-      risk: "High",
-      investment: "Low",
-      action: "Develop eco-friendly products and tap into growing demand",
-    },
-    {
-      industry: "Logistics",
-      opportunity: "Supply Chain Optimization",
-      growth: "25%",
-      risk: "High",
-      investment: "Medium",
-      action: "Focus on automation, data analytics, and partnerships",
-    },
-  ];
-
   return (
-    <div style={{ padding: "20px" }}>
-      <h3>Growth Opportunities</h3>
-    <div className="container d-flex">
-         {/* Pie Chart */}
-      <div className="col" style={{ width: "50%", marginBottom: "30px" }}>
-        <Pie data={pieData} />
+    <div className="container py-4">
+      <h2 className="mb-4">Market Growth Opportunities</h2>
+
+      <div className="row mb-4">
+        <div className="col-md-6">
+          <Card className="h-100 shadow-sm">
+            <Card.Body>
+              <Card.Title>Market Distribution</Card.Title>
+              <div style={{ height: '300px' }}>
+                <Pie
+                  data={pieData}
+                  options={{
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'right'
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </Card.Body>
+          </Card>
+        </div>
+
+        <div className="col-md-6">
+          <Card className="h-100 shadow-sm">
+            <Card.Body>
+              <Card.Title>Top Opportunities</Card.Title>
+              <div className="opportunities-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                {opportunities.map((opp, index) => (
+                  <div key={index} className="mb-3 pb-2 border-bottom">
+                    <h5>{opp.industry}</h5>
+                    <p className="text-muted">{opp.opportunity}</p>
+                    <div className="d-flex justify-content-between mb-2">
+                      <span>Growth: <strong>{opp.growth}%</strong></span>
+                      <Badge pill bg={riskVariant(opp.risk)}>Risk: {opp.risk}</Badge>
+                      <Badge pill bg="info">Investment: {opp.investment}</Badge>
+                    </div>
+                    <ProgressBar now={opp.growth} label={`${opp.growth}%`} />
+                    <p className="mt-2"><small className="text-primary">{opp.action}</small></p>
+                  </div>
+                ))}
+              </div>
+            </Card.Body>
+          </Card>
+        </div>
       </div>
 
-      {/* Opportunities List */}
-      <div className="col mx-5" style={{ marginBottom: "30px" }}>
-        <h4>Industry Growth Opportunities</h4>
-        <ul style={{ listStyleType: "none", padding: 0 }}>
-          {opportunities.map((opp, index) => (
-            <li key={index} style={{ marginBottom: "15px", borderBottom: "1px solid #ddd", paddingBottom: "10px" }}>
-              <strong>{opp.industry}</strong>
-              <p><em>{opp.opportunity}</em></p>
-              <p>Growth: {opp.growth} | Risk: {opp.risk} | Investment: {opp.investment}</p>
-              <p><strong>Action:</strong> {opp.action}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-      {/* Trend Analysis Table */}
-      <div>
-        <h4>Opportunity Metrics</h4>
-        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
-          <thead>
-            <tr>
-              <th style={{ border: "1px solid #ddd", padding: "10px" }}>Industry</th>
-              <th style={{ border: "1px solid #ddd", padding: "10px" }}>Opportunity</th>
-              <th style={{ border: "1px solid #ddd", padding: "10px" }}>Growth</th>
-              <th style={{ border: "1px solid #ddd", padding: "10px" }}>Risk</th>
-              <th style={{ border: "1px solid #ddd", padding: "10px" }}>Investment</th>
-              <th style={{ border: "1px solid #ddd", padding: "10px" }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {opportunities.map((opp, index) => (
-              <tr key={index}>
-                <td style={{ border: "1px solid #ddd", padding: "10px" }}>{opp.industry}</td>
-                <td style={{ border: "1px solid #ddd", padding: "10px" }}>{opp.opportunity}</td>
-                <td style={{ border: "1px solid #ddd", padding: "10px" }}>{opp.growth}</td>
-                <td style={{ border: "1px solid #ddd", padding: "10px" }}>{opp.risk}</td>
-                <td style={{ border: "1px solid #ddd", padding: "10px" }}>{opp.investment}</td>
-                <td style={{ border: "1px solid #ddd", padding: "10px" }}>{opp.action}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Table View */}
+      <Card className="mb-4 shadow-sm">
+        <Card.Body>
+          <Card.Title>Opportunity Metrics</Card.Title>
+          <div className="table-responsive">
+            <table className="table table-hover">
+              <thead className="table-light">
+                <tr>
+                  <th>Industry</th>
+                  <th>Opportunity</th>
+                  <th>Growth</th>
+                  <th>Risk</th>
+                  <th>Investment</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {opportunities.map((opp, index) => (
+                  <tr key={index}>
+                    <td>{opp.industry}</td>
+                    <td>{opp.opportunity}</td>
+                    <td>
+                      <ProgressBar now={opp.growth} style={{ height: '20px' }} label={`${opp.growth}%`} />
+                    </td>
+                    <td>
+                      <Badge bg={riskVariant(opp.risk)}>{opp.risk}</Badge>
+                    </td>
+                    <td>{opp.investment}</td>
+                    <td><small>{opp.action}</small></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card.Body>
+      </Card>
 
       {/* Notes Section */}
-      <div style={{ marginTop: "30px" }}>
-        <h4>Your Observations</h4>
-        <textarea
-          style={{ width: "100%", height: "120px", padding: "10px", borderRadius: "4px", border: "1px solid #ddd" }}
-          placeholder="Add your observations or ideas about growth opportunities..."
-        ></textarea>
-      </div>
+      <Card className="shadow-sm">
+        <Card.Body>
+          <Card.Title>Your Observations</Card.Title>
+          <textarea
+            className="form-control"
+            rows="4"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add your observations or ideas about growth opportunities..."
+          />
+          <button className="btn btn-primary mt-2">Save Notes</button>
+        </Card.Body>
+      </Card>
     </div>
   );
 };
