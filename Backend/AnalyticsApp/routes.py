@@ -1,9 +1,7 @@
 from flask import request, jsonify, current_app
 import random
 import requests
-from datetime import datetime
 import time
-import openai
 from pytrends.request import TrendReq
 import pytrends
 from .google_trends import fetch_google_trends
@@ -14,8 +12,12 @@ import os
 import json
 import yfinance as yf
 from concurrent.futures import ThreadPoolExecutor
-
 from werkzeug.utils import secure_filename
+import numpy as np
+from datetime import datetime, timedelta
+import pandas as pd
+
+
 @app.route('/api/register', methods=['POST'])
 def register():
     try:
@@ -437,3 +439,187 @@ def cameroon_opportunities():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/user-uploaded-files', methods=['GET'])
+@jwt_required()
+def get_user_uploaded_files():
+    try:
+        current_user_email = get_jwt_identity()
+        user = User.query.filter_by(email=current_user_email).first_or_404()
+
+        files = UploadedFile.query.filter_by(company_id=user.company_id) \
+            .filter(UploadedFile.file_type.in_([
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel'
+        ])) \
+            .order_by(UploadedFile.upload_date.desc()) \
+            .all()
+
+        return jsonify({
+            'files': [{
+                'id': file.id,
+                'filename': file.filename,
+                'uploadDate': file.upload_date.isoformat(),
+                'fileType': file.file_type
+            } for file in files]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+def get_file_path(file_id):
+    """Get the actual file path from database"""
+    file_record = UploadedFile.query.get(file_id)
+    if not file_record:
+        raise FileNotFoundError(f"File record {file_id} not found in database")
+    if not os.path.exists(file_record.file_path):
+        raise FileNotFoundError(f"File not found at {file_record.file_path}")
+    return file_record.file_path
+
+
+def downsample_data(df, max_points, time_column=None):
+    """Downsample data using appropriate method"""
+    if len(df) <= max_points:
+        return df
+
+    if time_column and pd.api.types.is_datetime64_any_dtype(df[time_column]):
+        return downsample_time_series(df, max_points, time_column)
+    return df.sample(n=max_points, random_state=42)
+
+
+@app.route('/api/excel-chart-data/<int:file_id>', methods=['GET'])
+@jwt_required()
+def get_excel_chart_data(file_id):
+    try:
+        # Get the file path from database
+        file_record = UploadedFile.query.get_or_404(file_id)
+        if not os.path.exists(file_record.file_path):
+            raise FileNotFoundError(f"File not found at {file_record.file_path}")
+
+        # Get range parameter
+        range_type = request.args.get('range', 'Monthly')
+
+        # Read the Excel file
+        try:
+            df = pd.read_excel(file_record.file_path, engine='openpyxl')
+        except Exception as e:
+            raise ValueError(f"Failed to read Excel file: {str(e)}")
+
+        # Process the data - handle non-numeric columns properly
+        date_col = next((col for col in df.columns if 'date' in col.lower()), None)
+
+        if date_col:
+            try:
+                df[date_col] = pd.to_datetime(df[date_col])
+
+                # Apply time range aggregation with updated frequency strings
+                freq_map = {
+                    'Daily': 'D',
+                    'Weekly': 'W-MON',
+                    'Monthly': 'ME',  # Updated from 'M' to 'ME'
+                    'Quarterly': 'QE'  # Updated from 'Q' to 'QE'
+                }
+
+                if range_type in freq_map:
+                    # First convert all numeric columns to float, ignore errors
+                    numeric_cols = df.select_dtypes(include=[np.number]).columns
+                    for col in numeric_cols:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+                    # Then group by date and take mean of numeric columns only
+                    grouped = df.groupby(pd.Grouper(key=date_col, freq=freq_map[range_type]))
+                    df = grouped[numeric_cols].mean().reset_index()
+
+                    # Fill any NA values that might have appeared
+                    df[numeric_cols] = df[numeric_cols].fillna(0)
+            except Exception as e:
+                raise ValueError(f"Failed to process date aggregation: {str(e)}")
+
+        # Downsample if still too large (max 1000 points)
+        if len(df) > 1000:
+            df = downsample_data(df, 1000, date_col)
+
+        # Prepare response - only include numeric columns
+        labels = []
+        if date_col:
+            format_map = {
+                'Daily': '%Y-%m-%d',
+                'Weekly': '%Y W%U',
+                'Monthly': '%Y-%m',
+                'Quarterly': '%Y Q%q'
+            }
+            date_format = format_map.get(range_type, '%Y-%m-%d')
+            labels = df[date_col].dt.strftime(date_format).tolist()
+        else:
+            labels = df.index.astype(str).tolist()
+
+        # Only include numeric columns in datasets
+        numeric_cols = [col for col in df.columns if
+                        pd.api.types.is_numeric_dtype(df[col]) and (not date_col or col != date_col)]
+
+        datasets = []
+        for col in numeric_cols:
+            datasets.append({
+                'label': col,
+                'data': df[col].fillna(0).astype(float).tolist()
+            })
+
+        if not datasets:
+            raise ValueError("No numeric data columns found in the Excel file")
+
+        return jsonify({
+            'filename': file_record.filename,
+            'labels': labels,
+            'datasets': datasets,
+            'message': 'Data processed successfully'
+        })
+
+    except FileNotFoundError as e:
+        return jsonify({'error': str(e)}), 404
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error processing file {file_id}: {str(e)}")
+        return jsonify({'error': 'Internal server error processing data'}), 500
+
+
+# File upload endpoint
+@app.route('/api/upload-excel', methods=['POST'])
+def upload_excel():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        # Save file
+        file.save(filepath)
+
+        # Create database record
+        new_file = UploadedFile(
+            filename=filename,
+            file_path=filepath,
+            file_type=file.content_type,
+            upload_date=datetime.utcnow()
+        )
+        db.session.add(new_file)
+        db.session.commit()
+
+        return jsonify({
+            'id': new_file.id,
+            'filename': new_file.filename,
+            'message': 'File uploaded successfully'
+        }), 201
+
+    return jsonify({'error': 'File type not allowed'}), 400
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in {'xlsx', 'xls'}

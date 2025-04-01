@@ -49,7 +49,7 @@ function TopNavBar() {
     return (
         <nav className="TopNavBar d-flex justify-content-between align-items-center text-dark py-3 px-4">
             <div className="logo fs-1 fw-bold">
-                <i className="fa-solid fa-compass mx-3"></i>ONE
+                <i className="fa-solid fa-compass mx-3"></i>ANALYTICS
             </div>
 
             <div className="TopNavbarElements d-flex align-items-center">
