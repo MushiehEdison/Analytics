@@ -19,21 +19,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost/
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(),'static/uploads/')
 app.config['DEFAULT_LOGO'] = 'static/logo/companyLogo.jpeg'
-AlLOWED_EXTENSION = {'pdf', 'csv', 'xlsx', 'xls', 'doc', 'docx', 'txt'}
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
-JWT_ACCESS_TOKEN_EXPIRES = 3600 # 1 hour in seconds
-JWT_REFRESH_TOKEN_EXPIRES = 86400 * 7 # 7 days in seconds
+
+# Cache configuration
+app.config['CACHE_TYPE'] = 'SimpleCache'  # Updated config name
+app.config['CACHE_DEFAULT_TIMEOUT'] = 3600  # 1 hour cache
 
 # Initialize extensions
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 jwt = JWTManager(app)
+cache = Cache(app)  # Initialize cache here
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
-
 login_manager.login_view = 'login'
-
-# Import routes
-from .routes import *
-from .models import Company, User, Risk, Operation, UploadedFile, LegalCompliance, Alerts, EmployeeData,EmployeePerformance,Report, Inventory, FinancialData, CustomerFeedback, MarketingCampaign, SalesData
+from . import routes

@@ -7,7 +7,7 @@ import CompetitorComparisonPage from "./IndustryInsightsComponents/CompetitorCom
 import GrowthOpportunities from "./IndustryInsightsComponents/GrowthOpportunities";
 import RiskIndicators from "./IndustryInsightsComponents/RiskIndicators";
 import MarketUpdates from "./IndustryInsightsComponents/StrengthWeaknesses";
-import SuccessStories from "./IndustryInsightsComponents/SuccessStories";
+import EconomicData from "./IndustryInsightsComponents/SuccessStories";
 
 function IndustryInsight() {
    const [activeSection, setActiveSection] = useState("Market Trends");
@@ -18,7 +18,7 @@ function IndustryInsight() {
     "Competitor Comparison",
     "Industry Updates",
     "Growth Opportunities",
-    "Success Stories",
+    "EconomicData",
   ];
 
   return (
@@ -74,7 +74,7 @@ function IndustryInsight() {
         {activeSection === "Competitor Comparison" && <CompetitorComparisonPage />}
         {activeSection === "Industry Updates" && <MarketUpdates />}
         {activeSection === "Growth Opportunities" && <GrowthOpportunities />}
-        {activeSection === "Success Stories" && <SuccessStories />}
+        {activeSection === "EconomicData" && <EconomicData />}
       </div>
     </div>
         </div>

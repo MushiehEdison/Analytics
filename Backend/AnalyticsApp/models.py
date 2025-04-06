@@ -1,6 +1,7 @@
 from datetime import datetime
 from . import db, login_manager
 from flask_login import UserMixin
+from sqlalchemy import JSON
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -137,6 +138,7 @@ class FinancialData(db.Model):
     InvestingCashFlow = db.Column(db.Float, nullable=True)
     FinancingCashFlow = db.Column(db.Float, nullable=True)
     TaxPayments = db.Column(db.Float, nullable=True)
+    extracted_data = db.Column(JSON, nullable=True)
 
     company = db.relationship('Company', back_populates='finances')
 
@@ -153,6 +155,7 @@ class CustomerFeedback(db.Model):
     Date = db.Column(db.Date, nullable=False)
     ResolutionStatus = db.Column(db.String(50), nullable=True)
     Rating = db.Column(db.Float, nullable=True)
+    extracted_data = db.Column(JSON, nullable=True)
 
     company = db.relationship('Company', back_populates='feedbacks')
 
@@ -171,6 +174,7 @@ class MarketingCampaign(db.Model):
     Outcomes = db.Column(db.Text, nullable=True)
     Reactions = db.Column(db.Text, nullable=True)
     Date = db.Column(db.Date, nullable=False)
+    extracted_data = db.Column(JSON, nullable=True)
 
     company = db.relationship('Company', back_populates='campaigns')
 
@@ -235,13 +239,14 @@ class SalesData(db.Model):
     __tablename__ = 'sales_data'
     id = db.Column(db.Integer, primary_key=True)
     CompanyID = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
-    ItemName = db.Column(db.String(50), nullable=False)  # Identifies the item
-    UnitPrice = db.Column(db.Float, nullable=False)  # Fixed price of each item
+    ItemName = db.Column(db.String(50), nullable=False)
+    UnitPrice = db.Column(db.Float, nullable=False)
     TotalSalesRevenue = db.Column(db.Float, nullable=False)
     UnitsSold = db.Column(db.Integer, nullable=False)
     ReturningCustomerCount = db.Column(db.Integer, nullable=False)
     NewCustomerCount = db.Column(db.Integer, nullable=True, default=0)
     Date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    extracted_data = db.Column(JSON, nullable=True)
 
     company = db.relationship('Company', back_populates='sales')
 
@@ -270,6 +275,7 @@ class Operation(db.Model):
     materials = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())  # Last update time
+    extracted_data = db.Column(JSON, nullable=True)
 
     company = db.relationship('Company', back_populates='operations')
 

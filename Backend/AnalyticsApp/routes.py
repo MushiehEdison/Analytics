@@ -5,7 +5,7 @@ import time
 from pytrends.request import TrendReq
 import pytrends
 from .google_trends import fetch_google_trends
-from . import app, db, bcrypt
+from . import app, db, bcrypt, cache
 from .models import User, Company, Inventory, UploadedFile, EmployeeData, FinancialData, CustomerFeedback, MarketingCampaign, SalesData, EmployeePerformance
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import os
@@ -16,6 +16,15 @@ from werkzeug.utils import secure_filename
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
+import threading
+from bs4 import BeautifulSoup
+import schedule
+import ssl
+from urllib3.util.ssl_ import  create_urllib3_context
+import  urllib3
+from fastapi import  FastAPI
+from transformers import pipeline
+
 
 
 @app.route('/api/register', methods=['POST'])
@@ -226,6 +235,7 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+
 @app.route('/api/dataentry', methods=['POST'])
 @jwt_required()
 def data_entry():
@@ -389,58 +399,6 @@ def get_market_news(market):
         return jsonify({'error': str(e)}), 500
 
 
-def fetch_cameroon_data():
-    """Fetch Cameroon-specific indicators from World Bank"""
-    indicators = {
-        "agriculture_growth": "NV.AGR.TOTL.KD.ZG",  # Agriculture value added (% of GDP)
-        "industry_growth": "NV.IND.TOTL.KD.ZG",  # Industry growth (%)
-        "services_growth": "NV.SRV.TOTL.KD.ZG",  # Services growth (%)
-        "gdp_growth": "NY.GDP.MKTP.KD.ZG"  # GDP growth (%)
-    }
-
-    data = {}
-    for key, indicator in indicators.items():
-        url = f"https://api.worldbank.org/v2/country/CM/indicator/{indicator}?format=json&date=2022"
-        response = requests.get(url).json()
-        latest_value = next((item for item in response[1] if item["value"] is not None), None)
-        data[key] = latest_value["value"] if latest_value else None
-
-    return data
-
-
-@app.route('/api/cameroon-opportunities')
-def cameroon_opportunities():
-    try:
-        indicators = fetch_cameroon_data()
-
-        # Analyze opportunities based on growth rates
-        opportunities = []
-        if indicators["agriculture_growth"] and indicators["agriculture_growth"] > 3:
-            opportunities.append({
-                "sector": "Agriculture",
-                "growth": indicators["agriculture_growth"],
-                "reason": "High growth in agri-value addition",
-                "subsectors": ["Agro-processing", "Organic farming", "Export crops"]
-            })
-
-        if indicators["services_growth"] and indicators["services_growth"] > 5:
-            opportunities.append({
-                "sector": "Services",
-                "growth": indicators["services_growth"],
-                "reason": "Booming digital and financial services",
-                "subsectors": ["FinTech", "E-commerce", "ICT Outsourcing"]
-            })
-
-        return jsonify({
-            "indicators": indicators,
-            "opportunities": opportunities,
-            "last_updated": "2022"  # World Bank data lags by 1-2 years
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 @app.route('/api/user-uploaded-files', methods=['GET'])
 @jwt_required()
 def get_user_uploaded_files():
@@ -588,7 +546,7 @@ def get_excel_chart_data(file_id):
 @app.route('/api/upload-excel', methods=['POST'])
 def upload_excel():
     if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
+        return jsonify({'error': 'No file}), 400
 
     file = request.files['file']
     if file.filename == '':
@@ -623,3 +581,5 @@ def upload_excel():
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in {'xlsx', 'xls'}
+
+
