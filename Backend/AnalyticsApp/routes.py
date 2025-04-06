@@ -546,7 +546,7 @@ def get_excel_chart_data(file_id):
 @app.route('/api/upload-excel', methods=['POST'])
 def upload_excel():
     if 'file' not in request.files:
-        return jsonify({'error': 'No file}), 400
+        return jsonify({'error': 'No file part'}), 400
 
     file = request.files['file']
     if file.filename == '':
