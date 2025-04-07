@@ -202,7 +202,7 @@ const DataEntry = () => {
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Customer Lifetime Value ($)</label>
+                                        <label>Customer Lifetime Value (FCFA)</label>
                                         <input
                                             type="number"
                                             name="sales.clv"
@@ -278,7 +278,7 @@ const DataEntry = () => {
                                 <h3><i className="fas fa-cogs"></i> Operations Metrics</h3>
                                 <div className="form-grid">
                                     <div className="input-group">
-                                        <label>Production Cost per Unit ($)</label>
+                                        <label>Production Cost per Unit (FCFA)</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -317,7 +317,7 @@ const DataEntry = () => {
                                 <h3><i className="fas fa-chart-line"></i> Financial Metrics</h3>
                                 <div className="form-grid">
                                     <div className="input-group">
-                                        <label>Annual Revenue ($)</label>
+                                        <label>Annual Revenue (FCFA)</label>
                                         <input
                                             type="number"
                                             name="financial.revenue"
@@ -365,7 +365,7 @@ const DataEntry = () => {
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label>Ad Spend ($ per month)</label>
+                                        <label>Ad Spend (FCFA per month)</label>
                                         <input
                                             type="number"
                                             name="digitalMarketing.adSpend"

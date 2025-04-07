@@ -16,16 +16,8 @@ from werkzeug.utils import secure_filename
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
-import threading
-from bs4 import BeautifulSoup
-import schedule
-import ssl
-from urllib3.util.ssl_ import  create_urllib3_context
-import  urllib3
-from fastapi import  FastAPI
-from transformers import pipeline
-
-
+import google.generativeai as genai
+from dotenv import load_dotenv
 
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -582,4 +574,77 @@ def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in {'xlsx', 'xls'}
 
+# ===============================================================================================================
+import google.generativeai as genai
 
+genai.configure(api_key="AIzaSyCAkiVwiFD2PyRv5mrQ5zjxtfnDwdCwmb4")
+
+
+@app.route('/api/ai-analysis', methods=['POST'])
+@jwt_required()
+def ai_business_analysis():
+    try:
+        # Authentication
+        user_email = get_jwt_identity()
+        user = User.query.filter_by(email=user_email).first_or_404()
+        company = Company.query.get_or_404(user.company_id)
+
+        # File processing
+        financial_file = UploadedFile.query.filter_by(
+            company_id=company.id,
+            file_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ).first_or_404()
+
+        df = pd.read_excel(financial_file.file_path)
+        file_summary = df.describe().to_string()
+
+        # Initialize model with correct name
+        model = genai.GenerativeModel('gemini-1.0-pro')  # Updated model name
+
+        prompt = f"""
+        Analyze this business data for {company.companyName} ({company.industry}):
+        {file_summary}
+
+        Return JSON with:
+        - risks: [{{"type": "", "description": "", "likelihood": "", "impact": ""}}]
+        - opportunities: [{{"description": "", "investment": "", "roi_timeline": ""}}]
+        - strategies: [{{"title": "", "description": "", "priority": "", "resources": "", "timeline": "", "expected_outcome": ""}}]
+        - financial_health: {{"score": 0, "strengths": [], "weaknesses": []}}
+        """
+
+        response = model.generate_content(
+            prompt,
+            generation_config={
+                "response_mime_type": "application/json",
+                "temperature": 0.7
+            }
+        )
+
+        # Parse and validate response
+        result = json.loads(response.text)
+        required_keys = ["risks", "opportunities", "strategies", "financial_health"]
+        if not all(k in result for k in required_keys):
+            raise ValueError("Invalid response structure from AI")
+
+        return jsonify({
+            "status": "success",
+            "analysis": result,
+            "file_used": financial_file.filename
+        })
+
+    except Exception as e:
+        print(f"AI Error: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "analysis": {  # Fallback structure
+                "risks": [{"type": "sample", "description": "Sample risk"}],
+                "opportunities": [{"description": "Sample opportunity"}],
+                "strategies": [{"title": "Sample strategy"}],
+                "financial_health": {
+                    "score": 5,
+                    "strengths": ["Sample strength"],
+                    "weaknesses": ["Sample weakness"]
+                }
+            }
+        }), 500
